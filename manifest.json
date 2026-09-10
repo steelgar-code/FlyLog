@@ -1,6 +1,7 @@
 {
   "short_name": "FlyLog",
   "name": "FlyLog Pro - UAV Flight & Fleet Operations",
+  "description": "Offline-first flight log and fleet manager for drone pilots.",
   "icons": [
     {
       "src": "icon-192.png",
