@@ -163,6 +163,29 @@
                     <i class="fa-solid fa-battery-three-quarters w-5 text-center text-base"></i>
                     <span data-i18n="navBatteries">Batteries</span>
                 </button>
+
+                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2" data-i18n="navSectionData">Data & Settings</div>
+
+                <button id="btnExportBackup" title="Download a full JSON backup of all flights, drones, batteries and statuses" data-i18n-title="exportBackupTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-cloud-arrow-down w-5 text-center text-base text-cyan-400"></i>
+                    <span data-i18n="exportBackupBtn">Export Backup</span>
+                </button>
+
+                <button id="btnImportBackup" title="Restore or merge data from a previously exported JSON backup" data-i18n-title="importBackupTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-cloud-arrow-up w-5 text-center text-base text-cyan-400"></i>
+                    <span data-i18n="importBackupBtn">Import Backup</span>
+                </button>
+                <input type="file" id="importFileInput" accept="application/json,.json" class="hidden">
+
+                <button id="btnExportCSV" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-file-csv w-5 text-center text-base text-emerald-400"></i>
+                    <span data-i18n="exportCsvBtn">Export CSV</span>
+                </button>
+
+                <button id="btnManageFieldsModal" title="Add or remove custom data fields for flight logs" data-i18n-title="manageFieldsTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-table-columns w-5 text-center text-base text-cyan-400"></i>
+                    <span data-i18n="manageFieldsBtn">Manage Fields</span>
+                </button>
             </div>
 
             <!-- Bottom System Status Card -->
@@ -330,34 +353,9 @@
 
             <!-- VIEW 2: FLIGHT LOGS LIST -->
             <section id="viewFlights" class="view-panel space-y-6 hidden">
-                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div>
-                        <h2 class="text-xl font-bold text-white" data-i18n="flightLogbookTitle">Flight Logbook</h2>
-                        <p class="text-xs text-slate-400" data-i18n="flightLogbookSubtitle">Flight records, timeline filters, and CSV export</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                        <button id="btnExportBackup" title="Download a full JSON backup of all flights, drones, batteries and statuses" data-i18n-title="exportBackupTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-down text-cyan-400"></i>
-                            <span data-i18n="exportBackupBtn">Export Backup</span>
-                        </button>
-                        <button id="btnImportBackup" title="Restore or merge data from a previously exported JSON backup" data-i18n-title="importBackupTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
-                            <span data-i18n="importBackupBtn">Import Backup</span>
-                        </button>
-                        <input type="file" id="importFileInput" accept="application/json,.json" class="hidden">
-                        <button id="btnExportCSV" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-file-csv text-emerald-400"></i>
-                            <span data-i18n="exportCsvBtn">Export CSV</span>
-                        </button>
-                        <button id="btnManageFieldsModal" title="Add or remove custom data fields for flight logs" data-i18n-title="manageFieldsTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-table-columns text-cyan-400"></i>
-                            <span data-i18n="manageFieldsBtn">Manage Fields</span>
-                        </button>
-                        <button id="btnNewFlightMain" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
-                            <i class="fa-solid fa-plus"></i>
-                            <span data-i18n="newFlightBtn">New Flight</span>
-                        </button>
-                    </div>
+                <div>
+                    <h2 class="text-xl font-bold text-white" data-i18n="flightLogbookTitle">Flight Logbook</h2>
+                    <p class="text-xs text-slate-400" data-i18n="flightLogbookSubtitle">Flight records, timeline filters, and CSV export</p>
                 </div>
 
                 <!-- Filters & Search Bar with Date Range Picker -->
@@ -373,29 +371,24 @@
                         </select>
                     </div>
 
-                    <!-- Modern Date Range Control with Presets -->
-                    <div class="flex flex-wrap md:flex-nowrap items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
-                        <div class="flex items-center gap-1.5 px-2 text-slate-400 text-xs font-semibold shrink-0">
-                            <i class="fa-solid fa-calendar-days text-cyan-400"></i>
-                            <span class="text-[11px] uppercase tracking-wider text-slate-400" data-i18n="dateRangeLabel">Date Range</span>
-                        </div>
+                    <!-- Quick Presets -->
+                    <div class="flex items-center gap-1 text-[11px] shrink-0">
+                        <button type="button" id="btnPreset7d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">7D</button>
+                        <button type="button" id="btnPreset30d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">30D</button>
+                        <button type="button" id="btnPresetMonth" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="presetThisMonth">This Month</button>
+                    </div>
 
-                        <!-- Quick Presets -->
-                        <div class="flex items-center gap-1 text-[11px]">
-                            <button type="button" id="btnPreset7d" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">7D</button>
-                            <button type="button" id="btnPreset30d" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">30D</button>
-                            <button type="button" id="btnPresetMonth" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="presetThisMonth">This Month</button>
-                        </div>
-
-                        <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 shrink-0" data-i18n="fromLabel">From</span>
-                            <input type="date" id="filterStartDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-[104px] min-w-0" title="Start Date" data-i18n-title="startDateTitle">
-                        </div>
-                        <span class="text-slate-600 text-xs font-bold shrink-0">-</span>
-                        <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
-                            <span class="text-[10px] uppercase font-bold text-slate-500 shrink-0" data-i18n="toLabel">To</span>
-                            <input type="date" id="filterEndDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-[104px] min-w-0" title="End Date" data-i18n-title="endDateTitle">
-                        </div>
+                    <!-- Date Range: two equal-width pills, each a calendar icon + native date input,
+                         wrapped in a <label> so tapping anywhere (including the icon) opens the picker -->
+                    <div class="grid grid-cols-2 gap-2 sm:flex sm:items-center sm:w-auto">
+                        <label class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer sm:w-[132px]" title="Start Date" data-i18n-title="startDateTitle">
+                            <i class="fa-solid fa-calendar-days text-cyan-400 text-xs shrink-0"></i>
+                            <input type="date" id="filterStartDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-full min-w-0">
+                        </label>
+                        <label class="flex items-center gap-1.5 bg-slate-950 px-2.5 py-1.5 rounded-lg border border-slate-800 cursor-pointer sm:w-[132px]" title="End Date" data-i18n-title="endDateTitle">
+                            <i class="fa-solid fa-calendar-days text-cyan-400 text-xs shrink-0"></i>
+                            <input type="date" id="filterEndDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-full min-w-0">
+                        </label>
                     </div>
 
                     <button id="btnResetFilters" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center justify-center gap-1.5 shrink-0">
@@ -471,7 +464,7 @@
 
     <!-- MODAL 1: LOG NEW FLIGHT -->
     <div id="modalLogFlight" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-plane-departure text-cyan-400"></i>
@@ -548,7 +541,7 @@
 
     <!-- MODAL 2: ADD / EDIT AIRFRAME -->
     <div id="modalDrone" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-helicopter text-cyan-400"></i>
@@ -592,7 +585,7 @@
 
     <!-- MODAL 3: MANAGE DRONE STATUS LIST -->
     <div id="modalManageStatuses" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-sliders text-cyan-400"></i>
@@ -621,7 +614,7 @@
 
     <!-- MODAL: MANAGE CUSTOM FIELDS -->
     <div id="modalManageFields" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-table-columns text-cyan-400"></i>
@@ -655,7 +648,7 @@
 
     <!-- MODAL 4: ADD / EDIT BATTERY -->
     <div id="modalBattery" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-battery-three-quarters text-cyan-400"></i>
@@ -701,7 +694,7 @@
 
     <!-- MODAL 5: CONFIRM DESTRUCTIVE ACTION -->
     <div id="modalConfirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
-        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center gap-2">
                 <div class="p-2 rounded-lg bg-rose-950/60 border border-rose-800/40 text-rose-400">
                     <i class="fa-solid fa-triangle-exclamation"></i>
@@ -727,7 +720,7 @@
         <div class="flex items-start gap-3">
             <img src="icon-192.png" alt="FlyLog" class="w-12 h-12 rounded-xl flex-shrink-0 object-cover">
             <div>
-                <h3 class="text-sm font-semibold text-slate-100" data-i18n="installPromptTitle">Install FlyLog Pro</h3>
+                <h3 class="text-sm font-semibold text-slate-100" data-i18n="installPromptTitle">Install FlyLog</h3>
                 <p class="text-xs text-slate-400 mt-0.5" data-i18n="installPromptDesc">Add to home screen for quick, offline access</p>
             </div>
         </div>
@@ -833,6 +826,7 @@
                 navSectionAssets: "Assets & Fleet",
                 navFleetDrones: "Fleet & Drones",
                 navBatteries: "Batteries",
+                navSectionData: "Data & Settings",
                 databaseSyncLabel: "Database Sync",
                 localStorageLabel: "Local Storage",
                 airframeReadinessLabel: "Airframe Readiness",
@@ -868,14 +862,10 @@
                 exportCsvBtn: "Export CSV",
                 manageFieldsTitle: "Add or remove custom data fields for flight logs",
                 manageFieldsBtn: "Manage Fields",
-                newFlightBtn: "New Flight",
                 filterSearchPlaceholder: "Search notes, drones, battery labels...",
                 allAirframesOption: "All Airframes",
-                dateRangeLabel: "Date Range",
                 presetThisMonth: "This Month",
-                fromLabel: "From",
                 startDateTitle: "Start Date",
-                toLabel: "To",
                 endDateTitle: "End Date",
                 resetBtn: "Reset",
                 colActions: "Actions",
@@ -932,7 +922,7 @@
                 confirmActionTitle: "Confirm Action",
                 deleteBtn: "Delete",
                 installDismissAriaLabel: "Dismiss",
-                installPromptTitle: "Install FlyLog Pro",
+                installPromptTitle: "Install FlyLog",
                 installPromptDesc: "Add to home screen for quick, offline access",
                 installBtnLabel: "Install App",
 
@@ -1011,6 +1001,7 @@
                 navSectionAssets: "Активи та флот",
                 navFleetDrones: "Флот і дрони",
                 navBatteries: "Батареї",
+                navSectionData: "Дані та налаштування",
                 databaseSyncLabel: "Синхронізація БД",
                 localStorageLabel: "Локальне сховище",
                 airframeReadinessLabel: "Готовність флоту",
@@ -1046,14 +1037,10 @@
                 exportCsvBtn: "Експорт CSV",
                 manageFieldsTitle: "Додати або видалити користувацькі поля даних для журналу польотів",
                 manageFieldsBtn: "Керувати полями",
-                newFlightBtn: "Новий політ",
                 filterSearchPlaceholder: "Пошук за нотатками, дронами, мітками батарей...",
                 allAirframesOption: "Усі апарати",
-                dateRangeLabel: "Діапазон дат",
                 presetThisMonth: "Цей місяць",
-                fromLabel: "Від",
                 startDateTitle: "Дата початку",
-                toLabel: "До",
                 endDateTitle: "Дата закінчення",
                 resetBtn: "Скинути",
                 colActions: "Дії",
@@ -1110,7 +1097,7 @@
                 confirmActionTitle: "Підтвердження дії",
                 deleteBtn: "Видалити",
                 installDismissAriaLabel: "Закрити",
-                installPromptTitle: "Встановити FlyLog Pro",
+                installPromptTitle: "Встановити FlyLog",
                 installPromptDesc: "Додайте на головний екран для швидкого офлайн-доступу",
                 installBtnLabel: "Встановити застосунок",
 
@@ -1195,6 +1182,7 @@
                 navSectionAssets: "Ativos e frota",
                 navFleetDrones: "Frota e drones",
                 navBatteries: "Baterias",
+                navSectionData: "Dados e configurações",
                 databaseSyncLabel: "Sincronização de dados",
                 localStorageLabel: "Armazenamento local",
                 airframeReadinessLabel: "Prontidão da frota",
@@ -1230,14 +1218,10 @@
                 exportCsvBtn: "Exportar CSV",
                 manageFieldsTitle: "Adicionar ou remover campos de dados personalizados para os registros de voo",
                 manageFieldsBtn: "Gerenciar campos",
-                newFlightBtn: "Novo voo",
                 filterSearchPlaceholder: "Buscar notas, drones, etiquetas de bateria...",
                 allAirframesOption: "Todas as aeronaves",
-                dateRangeLabel: "Período",
                 presetThisMonth: "Este mês",
-                fromLabel: "De",
                 startDateTitle: "Data inicial",
-                toLabel: "Até",
                 endDateTitle: "Data final",
                 resetBtn: "Redefinir",
                 colActions: "Ações",
@@ -1294,7 +1278,7 @@
                 confirmActionTitle: "Confirmar ação",
                 deleteBtn: "Excluir",
                 installDismissAriaLabel: "Dispensar",
-                installPromptTitle: "Instalar FlyLog Pro",
+                installPromptTitle: "Instalar FlyLog",
                 installPromptDesc: "Adicione à tela inicial para acesso rápido e offline",
                 installBtnLabel: "Instalar aplicativo",
 
@@ -1567,14 +1551,21 @@
             if (mobileBtn) mobileBtn.addEventListener('click', toggleMobileMenu);
             if (overlay) overlay.addEventListener('click', closeMobileMenu);
 
+            // Sidebar action buttons (Export/Import/Manage Fields) live in the same
+            // slide-out sidebar as navigation, so close it after use on mobile too.
+            document.querySelectorAll('.sidebar-action').forEach(btn => {
+                btn.addEventListener('click', () => closeMobileMenu());
+            });
+
             // Header log flight button
             document.getElementById('btnNewFlightHeader')?.addEventListener('click', () => openLogFlightModal());
-            document.getElementById('btnNewFlightMain')?.addEventListener('click', () => openLogFlightModal());
 
             // Fleet view buttons
             document.getElementById('btnAddDroneModal')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnInlineAddDrone')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnManageStatusesModal')?.addEventListener('click', () => openStatusesModal());
+
+            // Sidebar: Manage Fields
             document.getElementById('btnManageFieldsModal')?.addEventListener('click', () => openFieldsModal());
 
             // Batteries view buttons
