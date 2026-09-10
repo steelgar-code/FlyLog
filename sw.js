@@ -1,4 +1,4 @@
-// AeroLog Pro — offline service worker
+// FlyLog Pro — offline service worker
 //
 // Strategy: "network-first, falling back to cache, and cache everything that
 // succeeds." This keeps the app fresh when online, while transparently
@@ -13,11 +13,15 @@
 // data itself already lives in localStorage and works fully offline
 // regardless of whether this service worker is active.
 
-const CACHE_NAME = 'aerolog-cache-v1';
+const CACHE_NAME = 'flylog-cache-v1';
 const PRECACHE_URLS = [
     './',
     './index.html',
-    './UAV_Flight_Log_App.html'
+    './manifest.json',
+    './favicon.png',
+    './icon-192.png',
+    './icon-512.png',
+    './icon-maskable-512.png'
 ];
 
 self.addEventListener('install', (event) => {

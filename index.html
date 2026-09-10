@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AeroLog Pro - UAV Flight & Fleet Operations</title>
+    <title>FlyLog Pro - UAV Flight & Fleet Operations</title>
+    <meta name="theme-color" content="#0d9488">
+    <!-- PWA manifest + icons -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="icon-192.png">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
@@ -651,6 +656,23 @@
     <!-- Toast Notification Overlay -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
+    <!-- Install App Prompt -->
+    <div id="installPrompt" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 p-4 rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
+        <button type="button" id="installDismiss" aria-label="Dismiss" class="absolute top-2 right-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+        <div class="flex items-start gap-3">
+            <img src="icon-192.png" alt="FlyLog" class="w-12 h-12 rounded-xl flex-shrink-0 object-cover">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-100">Install FlyLog Pro</h3>
+                <p class="text-xs text-slate-400 mt-0.5">Add to home screen for quick, offline access</p>
+            </div>
+        </div>
+        <button type="button" id="installBtn" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-600/20">
+            <i class="fa-solid fa-download"></i> Install App
+        </button>
+    </div>
+
     <script>
         // Initial Mock Data
         const INITIAL_DRONES = [
@@ -695,10 +717,27 @@
                 const parsed = JSON.parse(raw);
                 return parsed === null || parsed === undefined ? fallback : parsed;
             } catch (err) {
-                console.warn(`AeroLog: could not read "${key}" from storage, using defaults.`, err);
+                console.warn(`FlyLog: could not read "${key}" from storage, using defaults.`, err);
                 return fallback;
             }
         }
+
+        // One-time migration: the app was previously named AeroLog and stored its
+        // data under `aerolog_*` keys. Copy that data over to the new `flylog_*`
+        // keys (without touching the old ones) so existing users keep their data.
+        (function migrateLegacyAerologStorage() {
+            try {
+                ['flights', 'drones', 'batteries', 'drone_statuses'].forEach((suffix) => {
+                    const oldKey = `aerolog_${suffix}`;
+                    const newKey = `flylog_${suffix}`;
+                    if (localStorage.getItem(newKey) === null && localStorage.getItem(oldKey) !== null) {
+                        localStorage.setItem(newKey, localStorage.getItem(oldKey));
+                    }
+                });
+            } catch (err) {
+                console.warn('FlyLog: legacy storage migration skipped.', err);
+            }
+        })();
 
         // Escape any user-entered string before it is placed into innerHTML.
         function escapeHtml(str) {
@@ -713,10 +752,10 @@
 
         // Application State
         let state = {
-            flights: loadFromStorage('aerolog_flights', INITIAL_FLIGHTS),
-            drones: loadFromStorage('aerolog_drones', INITIAL_DRONES),
-            batteries: loadFromStorage('aerolog_batteries', INITIAL_BATTERIES),
-            droneStatuses: loadFromStorage('aerolog_drone_statuses', ['Ready', 'Maintenance', 'In Inspection', 'Repairing', 'Retired']),
+            flights: loadFromStorage('flylog_flights', INITIAL_FLIGHTS),
+            drones: loadFromStorage('flylog_drones', INITIAL_DRONES),
+            batteries: loadFromStorage('flylog_batteries', INITIAL_BATTERIES),
+            droneStatuses: loadFromStorage('flylog_drone_statuses', ['Ready', 'Maintenance', 'In Inspection', 'Repairing', 'Retired']),
             activeTab: 'dashboard'
         };
 
@@ -762,19 +801,47 @@
         if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js').catch(err => {
-                    console.warn('AeroLog: service worker registration failed (offline asset caching unavailable).', err);
+                    console.warn('FlyLog: service worker registration failed (offline asset caching unavailable).', err);
                 });
             });
         }
 
+        // ================= Install prompt =================
+        // Captures the browser's native "install this PWA" prompt and shows our
+        // own UI for it instead, so we control when/how it's presented.
+        let deferredInstallPrompt = null;
+        const installPromptEl = document.getElementById('installPrompt');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredInstallPrompt = e;
+            if (localStorage.getItem('pwa-install-dismissed')) return;
+            if (window.matchMedia('(display-mode: standalone)').matches) return;
+            installPromptEl.classList.remove('hidden');
+        });
+
+        document.getElementById('installBtn').addEventListener('click', () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            deferredInstallPrompt.userChoice.then((choice) => {
+                if (choice.outcome === 'accepted') installPromptEl.classList.add('hidden');
+                deferredInstallPrompt = null;
+            });
+        });
+
+        document.getElementById('installDismiss').addEventListener('click', () => {
+            installPromptEl.classList.add('hidden');
+            localStorage.setItem('pwa-install-dismissed', 'true');
+        });
+
         function saveState() {
             try {
-                localStorage.setItem('aerolog_flights', JSON.stringify(state.flights));
-                localStorage.setItem('aerolog_drones', JSON.stringify(state.drones));
-                localStorage.setItem('aerolog_batteries', JSON.stringify(state.batteries));
-                localStorage.setItem('aerolog_drone_statuses', JSON.stringify(state.droneStatuses));
+                localStorage.setItem('flylog_flights', JSON.stringify(state.flights));
+                localStorage.setItem('flylog_drones', JSON.stringify(state.drones));
+                localStorage.setItem('flylog_batteries', JSON.stringify(state.batteries));
+                localStorage.setItem('flylog_drone_statuses', JSON.stringify(state.droneStatuses));
             } catch (err) {
-                console.error('AeroLog: failed to save to local storage.', err);
+                console.error('FlyLog: failed to save to local storage.', err);
                 showToast('Could not save changes locally — storage may be full', 'warning');
             }
         }
@@ -1555,7 +1622,7 @@
             const ctxAirframe = document.getElementById('chartMissionTypes')?.getContext('2d');
 
             if (typeof Chart === 'undefined') {
-                console.warn('AeroLog: Chart.js failed to load (likely no network access) — charts will be skipped, the rest of the app still works.');
+                console.warn('FlyLog: Chart.js failed to load (likely no network access) — charts will be skipped, the rest of the app still works.');
                 return;
             }
 
@@ -1609,7 +1676,7 @@
                     });
                 }
             } catch (err) {
-                console.error('AeroLog: chart initialization failed, continuing without charts.', err);
+                console.error('FlyLog: chart initialization failed, continuing without charts.', err);
             }
         }
 
@@ -1629,7 +1696,7 @@
                     chartHoursInstance.update();
                 }
             } catch (err) {
-                console.error('AeroLog: chart update failed.', err);
+                console.error('FlyLog: chart update failed.', err);
             }
         }
 
@@ -1664,7 +1731,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', `aerolog_flights_${new Date().toISOString().split('T')[0]}.csv`);
+            link.setAttribute('download', `flylog_flights_${new Date().toISOString().split('T')[0]}.csv`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1677,7 +1744,7 @@
         // moved between browsers/devices, or recovered after clearing storage.
         function exportBackup() {
             const payload = {
-                app: 'AeroLog Pro',
+                app: 'FlyLog Pro',
                 backupVersion: 1,
                 exportedAt: new Date().toISOString(),
                 flights: state.flights,
@@ -1689,7 +1756,7 @@
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
-            link.setAttribute('download', `aerolog_backup_${new Date().toISOString().split('T')[0]}.json`);
+            link.setAttribute('download', `flylog_backup_${new Date().toISOString().split('T')[0]}.json`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -1710,7 +1777,7 @@
                 }
                 if (!data || typeof data !== 'object' ||
                     !Array.isArray(data.drones) || !Array.isArray(data.batteries) || !Array.isArray(data.flights)) {
-                    showToast('That file doesn\'t look like an AeroLog backup', 'warning');
+                    showToast('That file doesn\'t look like a FlyLog backup', 'warning');
                     return;
                 }
 
