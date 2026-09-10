@@ -61,6 +61,21 @@
         input[type="date"], input[type="datetime-local"] {
             color-scheme: dark;
         }
+
+        .lang-select {
+            background: rgb(30 41 59 / 0.6);
+            border: 1px solid rgb(51 65 85 / 0.5);
+            color: rgb(226 232 240);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 0.375rem 0.5rem;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            outline: none;
+        }
+        .lang-select:focus {
+            border-color: rgb(34 211 238);
+        }
     </style>
 </head>
 <body class="h-full font-sans antialiased bg-slate-950 text-slate-100 flex flex-col overflow-hidden">
@@ -76,7 +91,7 @@
                     <i class="fa-solid fa-satellite-dish text-lg"></i>
                 </div>
                 <div>
-                    <span class="font-bold tracking-tight text-white text-lg">AERO<span class="text-cyan-400">LOG</span></span>
+                    <span class="font-bold tracking-tight text-white text-lg">FLY<span class="text-cyan-400">LOG</span></span>
                     <span class="hidden sm:inline-block ml-2 text-xs px-2 py-0.5 rounded-full bg-cyan-950/80 text-cyan-300 border border-cyan-800/50 font-mono">v2.5 TAC-OPS</span>
                 </div>
             </div>
@@ -86,28 +101,34 @@
         <div class="flex items-center gap-3">
             <div id="offlineBadge" class="hidden items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/60 border border-amber-800/50 text-xs text-amber-300 font-medium">
                 <i class="fa-solid fa-triangle-exclamation"></i>
-                <span>Offline — changes saved locally</span>
+                <span data-i18n="offlineBadge">Offline — changes saved locally</span>
             </div>
             <div class="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs">
                 <div class="flex items-center gap-1.5 text-amber-400">
                     <i class="fa-solid fa-sun"></i>
-                    <span>Clear Sky</span>
+                    <span data-i18n="weatherClearSky">Clear Sky</span>
                 </div>
                 <div class="h-3 w-px bg-slate-700"></div>
                 <div class="flex items-center gap-1.5 text-slate-300">
                     <i class="fa-solid fa-wind text-cyan-400"></i>
-                    <span>8.5 kts</span>
+                    <span>8.5 <span data-i18n="unitKnots">kts</span></span>
                 </div>
                 <div class="h-3 w-px bg-slate-700"></div>
                 <div class="flex items-center gap-1 text-emerald-400 font-mono">
                     <i class="fa-solid fa-shield-halved"></i>
-                    <span>GPS 18 Sats</span>
+                    <span>GPS 18 <span data-i18n="unitSats">Sats</span></span>
                 </div>
             </div>
 
+            <select class="lang-select" id="langSelect" data-i18n-aria-label="langSelectorAriaLabel" aria-label="Language">
+                <option value="en">English</option>
+                <option value="uk">Українська</option>
+                <option value="pt-BR">Português (BR)</option>
+            </select>
+
             <button id="btnNewFlightHeader" class="flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-semibold text-xs transition shadow-lg shadow-cyan-500/20">
                 <i class="fa-solid fa-plus"></i>
-                <span>Log Flight</span>
+                <span data-i18n="logFlightBtn">Log Flight</span>
             </button>
         </div>
     </header>
@@ -118,29 +139,29 @@
         <!-- Sidebar Navigation -->
         <aside id="sidebar" class="fixed lg:static inset-y-0 left-0 w-64 bg-slate-900 border-r border-slate-800/80 z-40 transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-in-out flex flex-col">
             <div class="p-4 space-y-1 flex-1 overflow-y-auto">
-                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2">Operations</div>
-                
+                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mb-2" data-i18n="navSectionOperations">Operations</div>
+
                 <button data-nav="dashboard" class="nav-link active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-cyan-400 bg-cyan-950/40 border border-cyan-800/40">
                     <i class="fa-solid fa-chart-pie w-5 text-center text-base"></i>
-                    <span>Dashboard</span>
+                    <span data-i18n="navDashboard">Dashboard</span>
                 </button>
 
                 <button data-nav="flights" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
                     <i class="fa-solid fa-book-atlas w-5 text-center text-base"></i>
-                    <span>Flight Logs</span>
+                    <span data-i18n="navFlightLogs">Flight Logs</span>
                     <span id="badgeFlightCount" class="ml-auto text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 font-mono">0</span>
                 </button>
 
-                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2">Assets & Fleet</div>
+                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2" data-i18n="navSectionAssets">Assets & Fleet</div>
 
                 <button data-nav="fleet" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
                     <i class="fa-solid fa-helicopter w-5 text-center text-base"></i>
-                    <span>Fleet & Drones</span>
+                    <span data-i18n="navFleetDrones">Fleet & Drones</span>
                 </button>
 
                 <button data-nav="batteries" class="nav-link w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
                     <i class="fa-solid fa-battery-three-quarters w-5 text-center text-base"></i>
-                    <span>Batteries</span>
+                    <span data-i18n="navBatteries">Batteries</span>
                 </button>
             </div>
 
@@ -148,14 +169,14 @@
             <div class="p-4 border-t border-slate-800 bg-slate-900/50">
                 <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 text-xs space-y-2">
                     <div class="flex items-center justify-between text-slate-400">
-                        <span>Database Sync</span>
+                        <span data-i18n="databaseSyncLabel">Database Sync</span>
                         <span class="text-emerald-400 flex items-center gap-1">
                             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                            Local Storage
+                            <span data-i18n="localStorageLabel">Local Storage</span>
                         </span>
                     </div>
                     <div class="flex items-center justify-between text-slate-400">
-                        <span>Airframe Readiness</span>
+                        <span data-i18n="airframeReadinessLabel">Airframe Readiness</span>
                         <span id="sidebarReadiness" class="text-cyan-400">100% Ready</span>
                     </div>
                 </div>
@@ -176,7 +197,7 @@
                     <div data-nav="flights" class="p-4 rounded-2xl bg-slate-900 border border-slate-800/80 relative overflow-hidden shadow-sm cursor-pointer hover:border-cyan-500/50 hover:bg-slate-800/60 transition group">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-cyan-400 transition">Total Flight Time</p>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-cyan-400 transition" data-i18n="statTotalFlightTimeLabel">Total Flight Time</p>
                                 <h3 id="statTotalHours" class="text-2xl font-extrabold text-white font-mono mt-1">00h 00m</h3>
                             </div>
                             <div class="p-2.5 rounded-xl bg-cyan-950/60 border border-cyan-800/40 text-cyan-400">
@@ -184,8 +205,8 @@
                             </div>
                         </div>
                         <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
-                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-clock"></i> Cumulative</span>
-                            <span class="text-slate-500 text-[11px]">View Logbook <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
+                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-clock"></i> <span data-i18n="cumulativeLabel">Cumulative</span></span>
+                            <span class="text-slate-500 text-[11px]"><span data-i18n="viewLogbookLink">View Logbook</span> <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
                         </div>
                     </div>
 
@@ -193,7 +214,7 @@
                     <div data-nav="flights" class="p-4 rounded-2xl bg-slate-900 border border-slate-800/80 relative overflow-hidden shadow-sm cursor-pointer hover:border-teal-500/50 hover:bg-slate-800/60 transition group">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-teal-400 transition">Logged Flights</p>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-teal-400 transition" data-i18n="statLoggedFlightsLabel">Logged Flights</p>
                                 <h3 id="statTotalFlights" class="text-2xl font-extrabold text-white font-mono mt-1">0</h3>
                             </div>
                             <div class="p-2.5 rounded-xl bg-teal-950/60 border border-teal-800/40 text-teal-400">
@@ -201,8 +222,8 @@
                             </div>
                         </div>
                         <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
-                            <span class="text-cyan-400 font-medium"><i class="fa-solid fa-check"></i> Total Missions</span>
-                            <span class="text-slate-500 text-[11px]">View Logbook <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
+                            <span class="text-cyan-400 font-medium"><i class="fa-solid fa-check"></i> <span data-i18n="totalMissionsLabel">Total Missions</span></span>
+                            <span class="text-slate-500 text-[11px]"><span data-i18n="viewLogbookLink">View Logbook</span> <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
                         </div>
                     </div>
 
@@ -210,7 +231,7 @@
                     <div data-nav="fleet" class="p-4 rounded-2xl bg-slate-900 border border-slate-800/80 relative overflow-hidden shadow-sm cursor-pointer hover:border-indigo-500/50 hover:bg-slate-800/60 transition group">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-indigo-400 transition">Active Airframes</p>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-indigo-400 transition" data-i18n="statActiveAirframesLabel">Active Airframes</p>
                                 <h3 id="statActiveDrones" class="text-2xl font-extrabold text-white font-mono mt-1">0</h3>
                             </div>
                             <div class="p-2.5 rounded-xl bg-indigo-950/60 border border-indigo-800/40 text-indigo-400">
@@ -218,8 +239,8 @@
                             </div>
                         </div>
                         <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
-                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-circle-check"></i> Fleet Size</span>
-                            <span class="text-slate-500 text-[11px]">Manage Fleet <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
+                            <span class="text-emerald-400 font-medium"><i class="fa-solid fa-circle-check"></i> <span data-i18n="fleetSizeLabel">Fleet Size</span></span>
+                            <span class="text-slate-500 text-[11px]"><span data-i18n="manageFleetLink">Manage Fleet</span> <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
                         </div>
                     </div>
 
@@ -227,7 +248,7 @@
                     <div data-nav="batteries" class="p-4 rounded-2xl bg-slate-900 border border-slate-800/80 relative overflow-hidden shadow-sm cursor-pointer hover:border-amber-500/50 hover:bg-slate-800/60 transition group">
                         <div class="flex justify-between items-start">
                             <div>
-                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-amber-400 transition">Batteries Tracked</p>
+                                <p class="text-xs font-medium text-slate-400 uppercase tracking-wider group-hover:text-amber-400 transition" data-i18n="statBatteriesTrackedLabel">Batteries Tracked</p>
                                 <h3 id="statBatteriesCount" class="text-2xl font-extrabold text-white font-mono mt-1">0</h3>
                             </div>
                             <div class="p-2.5 rounded-xl bg-amber-950/60 border border-amber-800/40 text-amber-400">
@@ -235,8 +256,8 @@
                             </div>
                         </div>
                         <div class="mt-3 flex items-center justify-between text-xs text-slate-400">
-                            <span class="text-amber-400 font-medium"><i class="fa-solid fa-bolt"></i> Power Packs</span>
-                            <span class="text-slate-500 text-[11px]">Manage Packs <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
+                            <span class="text-amber-400 font-medium"><i class="fa-solid fa-bolt"></i> <span data-i18n="powerPacksLabel">Power Packs</span></span>
+                            <span class="text-slate-500 text-[11px]"><span data-i18n="managePacksLink">Manage Packs</span> <i class="fa-solid fa-chevron-right text-[10px] ml-1"></i></span>
                         </div>
                     </div>
                 </div>
@@ -248,9 +269,9 @@
                         <div class="flex items-center justify-between">
                             <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-cyan-400"></i>
-                                Flight Hours Trend
+                                <span data-i18n="chartFlightHoursTrend">Flight Hours Trend</span>
                             </h3>
-                            <span class="text-xs text-slate-400">Monthly Aggregates</span>
+                            <span class="text-xs text-slate-400" data-i18n="monthlyAggregates">Monthly Aggregates</span>
                         </div>
                         <div class="h-64">
                             <canvas id="chartFlightHours"></canvas>
@@ -262,9 +283,9 @@
                         <div class="flex items-center justify-between">
                             <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-chart-pie text-teal-400"></i>
-                                Airframe Usage
+                                <span data-i18n="chartAirframeUsage">Airframe Usage</span>
                             </h3>
-                            <span class="text-xs text-slate-400">Flight Share</span>
+                            <span class="text-xs text-slate-400" data-i18n="flightShareLabel">Flight Share</span>
                         </div>
                         <div class="h-64 flex items-center justify-center">
                             <canvas id="chartMissionTypes"></canvas>
@@ -272,15 +293,18 @@
                     </div>
                 </div>
 
+                <!-- Custom Numeric Field Trend Charts (populated dynamically, one per numeric field) -->
+                <div id="customFieldChartsContainer" class="grid grid-cols-1 lg:grid-cols-2 gap-6"></div>
+
                 <!-- Recent Flight Logs Table -->
                 <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4">
                     <div class="flex items-center justify-between">
                         <div>
-                            <h3 class="font-semibold text-slate-100 text-base">Recent Operations</h3>
-                            <p class="text-xs text-slate-400">Latest recorded UAV flights</p>
+                            <h3 class="font-semibold text-slate-100 text-base" data-i18n="recentOperationsTitle">Recent Operations</h3>
+                            <p class="text-xs text-slate-400" data-i18n="recentOperationsSubtitle">Latest recorded UAV flights</p>
                         </div>
                         <button data-nav="flights" class="text-xs font-semibold text-cyan-400 hover:text-cyan-300 flex items-center gap-1 transition">
-                            View Logbook <i class="fa-solid fa-arrow-right"></i>
+                            <span data-i18n="viewLogbookLink">View Logbook</span> <i class="fa-solid fa-arrow-right"></i>
                         </button>
                     </div>
 
@@ -288,12 +312,12 @@
                         <table class="w-full text-left text-xs text-slate-300">
                             <thead class="bg-slate-950/60 text-slate-400 uppercase font-mono border-b border-slate-800">
                                 <tr>
-                                    <th class="py-3 px-3">Airframe / Drone</th>
-                                    <th class="py-3 px-3">Battery Label</th>
-                                    <th class="py-3 px-3">Flight Start</th>
-                                    <th class="py-3 px-3">Flight End</th>
-                                    <th class="py-3 px-3">Duration</th>
-                                    <th class="py-3 px-3">Notes</th>
+                                    <th class="py-3 px-3" data-i18n="colAirframeDrone">Airframe / Drone</th>
+                                    <th class="py-3 px-3" data-i18n="colBatteryLabel">Battery Label</th>
+                                    <th class="py-3 px-3" data-i18n="colFlightStart">Flight Start</th>
+                                    <th class="py-3 px-3" data-i18n="colFlightEnd">Flight End</th>
+                                    <th class="py-3 px-3" data-i18n="colDuration">Duration</th>
+                                    <th class="py-3 px-3" data-i18n="colNotes">Notes</th>
                                 </tr>
                             </thead>
                             <tbody id="dashboardRecentTable" class="divide-y divide-slate-800/60 font-medium">
@@ -308,26 +332,30 @@
             <section id="viewFlights" class="view-panel space-y-6 hidden">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-xl font-bold text-white">Flight Logbook</h2>
-                        <p class="text-xs text-slate-400">Flight records, timeline filters, and CSV export</p>
+                        <h2 class="text-xl font-bold text-white" data-i18n="flightLogbookTitle">Flight Logbook</h2>
+                        <p class="text-xs text-slate-400" data-i18n="flightLogbookSubtitle">Flight records, timeline filters, and CSV export</p>
                     </div>
                     <div class="flex items-center gap-2">
-                        <button id="btnExportBackup" title="Download a full JSON backup of all flights, drones, batteries and statuses" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                        <button id="btnExportBackup" title="Download a full JSON backup of all flights, drones, batteries and statuses" data-i18n-title="exportBackupTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-cloud-arrow-down text-cyan-400"></i>
-                            Export Backup
+                            <span data-i18n="exportBackupBtn">Export Backup</span>
                         </button>
-                        <button id="btnImportBackup" title="Restore or merge data from a previously exported JSON backup" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                        <button id="btnImportBackup" title="Restore or merge data from a previously exported JSON backup" data-i18n-title="importBackupTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-cloud-arrow-up text-cyan-400"></i>
-                            Import Backup
+                            <span data-i18n="importBackupBtn">Import Backup</span>
                         </button>
                         <input type="file" id="importFileInput" accept="application/json,.json" class="hidden">
                         <button id="btnExportCSV" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-file-csv text-emerald-400"></i>
-                            Export CSV
+                            <span data-i18n="exportCsvBtn">Export CSV</span>
+                        </button>
+                        <button id="btnManageFieldsModal" title="Add or remove custom data fields for flight logs" data-i18n-title="manageFieldsTitle" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-table-columns text-cyan-400"></i>
+                            <span data-i18n="manageFieldsBtn">Manage Fields</span>
                         </button>
                         <button id="btnNewFlightMain" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
                             <i class="fa-solid fa-plus"></i>
-                            Log New Flight
+                            <span data-i18n="newFlightBtn">New Flight</span>
                         </button>
                     </div>
                 </div>
@@ -336,12 +364,12 @@
                 <div class="p-4 rounded-2xl bg-slate-900 border border-slate-800/80 flex flex-col md:flex-row items-stretch md:items-center gap-3">
                     <div class="relative flex-1">
                         <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-500 text-xs"></i>
-                        <input type="text" id="filterSearch" placeholder="Search notes, drones, battery labels..." class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
+                        <input type="text" id="filterSearch" placeholder="Search notes, drones, battery labels..." data-i18n-placeholder="filterSearchPlaceholder" class="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyan-500">
                     </div>
 
                     <div class="md:w-48">
                         <select id="filterDrone" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-cyan-500">
-                            <option value="">All Airframes</option>
+                            <option value="" data-i18n="allAirframesOption">All Airframes</option>
                         </select>
                     </div>
 
@@ -349,32 +377,30 @@
                     <div class="flex flex-wrap md:flex-nowrap items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800">
                         <div class="flex items-center gap-1.5 px-2 text-slate-400 text-xs font-semibold shrink-0">
                             <i class="fa-solid fa-calendar-days text-cyan-400"></i>
-                            <span class="text-[11px] uppercase tracking-wider text-slate-400">Date Range</span>
+                            <span class="text-[11px] uppercase tracking-wider text-slate-400" data-i18n="dateRangeLabel">Date Range</span>
                         </div>
-                        
+
                         <!-- Quick Presets -->
                         <div class="flex items-center gap-1 text-[11px]">
                             <button type="button" id="btnPreset7d" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">7D</button>
                             <button type="button" id="btnPreset30d" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">30D</button>
-                            <button type="button" id="btnPresetMonth" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">This Month</button>
+                            <button type="button" id="btnPresetMonth" class="px-2 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="presetThisMonth">This Month</button>
                         </div>
 
-                        <div class="flex items-center gap-1.5">
-                            <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                                <span class="text-[10px] uppercase font-bold text-slate-500">From</span>
-                                <input type="date" id="filterStartDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer" title="Start Date">
-                            </div>
-                            <span class="text-slate-600 text-xs font-bold">-</span>
-                            <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800">
-                                <span class="text-[10px] uppercase font-bold text-slate-500">To</span>
-                                <input type="date" id="filterEndDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer" title="End Date">
-                            </div>
+                        <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 shrink-0" data-i18n="fromLabel">From</span>
+                            <input type="date" id="filterStartDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-[104px] min-w-0" title="Start Date" data-i18n-title="startDateTitle">
+                        </div>
+                        <span class="text-slate-600 text-xs font-bold shrink-0">-</span>
+                        <div class="flex items-center gap-1 bg-slate-900 px-2.5 py-1 rounded-lg border border-slate-800 shrink-0">
+                            <span class="text-[10px] uppercase font-bold text-slate-500 shrink-0" data-i18n="toLabel">To</span>
+                            <input type="date" id="filterEndDate" class="bg-transparent text-xs text-slate-200 focus:outline-none font-mono cursor-pointer w-[104px] min-w-0" title="End Date" data-i18n-title="endDateTitle">
                         </div>
                     </div>
 
                     <button id="btnResetFilters" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center justify-center gap-1.5 shrink-0">
                         <i class="fa-solid fa-rotate-left text-[10px]"></i>
-                        <span>Reset</span>
+                        <span data-i18n="resetBtn">Reset</span>
                     </button>
                 </div>
 
@@ -383,14 +409,14 @@
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-xs text-slate-300">
                             <thead class="bg-slate-950/80 text-slate-400 uppercase font-mono border-b border-slate-800">
-                                <tr>
-                                    <th class="py-3 px-3">Airframe / Drone</th>
-                                    <th class="py-3 px-3">Battery Label</th>
-                                    <th class="py-3 px-3">Flight Start</th>
-                                    <th class="py-3 px-3">Flight End</th>
-                                    <th class="py-3 px-3">Duration</th>
-                                    <th class="py-3 px-3">Notes</th>
-                                    <th class="py-3 px-3 text-right">Actions</th>
+                                <tr id="flightsTableHeaderRow">
+                                    <th class="py-3 px-3" data-i18n="colAirframeDrone">Airframe / Drone</th>
+                                    <th class="py-3 px-3" data-i18n="colBatteryLabel">Battery Label</th>
+                                    <th class="py-3 px-3" data-i18n="colFlightStart">Flight Start</th>
+                                    <th class="py-3 px-3" data-i18n="colFlightEnd">Flight End</th>
+                                    <th class="py-3 px-3" data-i18n="colDuration">Duration</th>
+                                    <th class="py-3 px-3" data-i18n="colNotes">Notes</th>
+                                    <th class="py-3 px-3 text-right actions-header" data-i18n="colActions">Actions</th>
                                 </tr>
                             </thead>
                             <tbody id="flightsTableBody" class="divide-y divide-slate-800/60 font-medium">
@@ -405,15 +431,15 @@
             <section id="viewFleet" class="view-panel space-y-6 hidden">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-xl font-bold text-white">Airframe Fleet Management</h2>
-                        <p class="text-xs text-slate-400">Track drone operational readiness, frame hours, and flight counts</p>
+                        <h2 class="text-xl font-bold text-white" data-i18n="fleetMgmtTitle">Airframe Fleet Management</h2>
+                        <p class="text-xs text-slate-400" data-i18n="fleetMgmtSubtitle">Track drone operational readiness, frame hours, and flight counts</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button id="btnManageStatusesModal" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-sliders text-cyan-400"></i> Edit Status List
+                            <i class="fa-solid fa-sliders text-cyan-400"></i> <span data-i18n="editStatusListBtn">Edit Status List</span>
                         </button>
                         <button id="btnAddDroneModal" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
-                            <i class="fa-solid fa-plus"></i> Add Drone
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="addDroneBtn">Add Drone</span>
                         </button>
                     </div>
                 </div>
@@ -427,11 +453,11 @@
             <section id="viewBatteries" class="view-panel space-y-6 hidden">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-xl font-bold text-white">Battery Inventory</h2>
-                        <p class="text-xs text-slate-400">Track charge cycles, total flight duration, and health status</p>
+                        <h2 class="text-xl font-bold text-white" data-i18n="batteryInventoryTitle">Battery Inventory</h2>
+                        <p class="text-xs text-slate-400" data-i18n="batteryInventorySubtitle">Track charge cycles, total flight duration, and health status</p>
                     </div>
                     <button id="btnAddBatteryModal" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
-                        <i class="fa-solid fa-plus"></i> Add Battery Pack
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="addBatteryBtn">Add Battery Pack</span>
                     </button>
                 </div>
 
@@ -449,32 +475,32 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-plane-departure text-cyan-400"></i>
-                    <h3 class="font-bold text-white text-base">Log UAV Flight</h3>
+                    <h3 class="font-bold text-white text-base" data-i18n="logFlightModalTitle">Log UAV Flight</h3>
                 </div>
-                <button id="closeLogFlightModal" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button id="closeLogFlightModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <form id="formLogFlight" class="space-y-4 text-xs">
                 <div>
-                    <label for="flightDrone" class="block text-slate-400 mb-1 font-medium">Airframe / Drone <span class="text-rose-400">*</span></label>
+                    <label for="flightDrone" class="block text-slate-400 mb-1 font-medium"><span data-i18n="colAirframeDrone">Airframe / Drone</span> <span class="text-rose-400">*</span></label>
                     <div class="flex gap-2">
                         <select id="flightDrone" required class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
                             <!-- Populated dynamically -->
                         </select>
-                        <button type="button" id="btnInlineAddDrone" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 font-medium" title="Add New Drone">
+                        <button type="button" id="btnInlineAddDrone" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 font-medium" title="Add New Drone" data-i18n-title="addNewDroneTitle">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
                 </div>
 
                 <div>
-                    <label for="flightBattery" class="block text-slate-400 mb-1 font-medium">Battery Label (Optional)</label>
+                    <label for="flightBattery" class="block text-slate-400 mb-1 font-medium" data-i18n="batteryLabelOptional">Battery Label (Optional)</label>
                     <div class="flex gap-2">
                         <select id="flightBattery" class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
-                            <option value="">-- None / Standard --</option>
+                            <option value="" data-i18n="noneStandardOption">-- None / Standard --</option>
                             <!-- Populated dynamically -->
                         </select>
-                        <button type="button" id="btnInlineAddBattery" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 font-medium" title="Add New Battery">
+                        <button type="button" id="btnInlineAddBattery" class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-slate-700 font-medium" title="Add New Battery" data-i18n-title="addNewBatteryTitle">
                             <i class="fa-solid fa-plus"></i>
                         </button>
                     </div>
@@ -484,34 +510,37 @@
                 <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 space-y-3">
                     <div class="text-[11px] text-cyan-400 font-semibold flex items-center gap-1.5">
                         <i class="fa-solid fa-wand-magic-sparkles"></i>
-                        <span>Auto-Calculator (Fill any 2 fields to derive the 3rd)</span>
+                        <span data-i18n="autoCalcLabel">Auto-Calculator (Fill any 2 fields to derive the 3rd)</span>
                     </div>
 
                     <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
-                            <label for="flightStartTime" class="block text-slate-400 mb-1">Flight Start Time</label>
+                            <label for="flightStartTime" class="block text-slate-400 mb-1" data-i18n="flightStartTimeLabel">Flight Start Time</label>
                             <input type="datetime-local" id="flightStartTime" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                         </div>
                         <div>
-                            <label for="flightEndTime" class="block text-slate-400 mb-1">Flight End Time</label>
+                            <label for="flightEndTime" class="block text-slate-400 mb-1" data-i18n="flightEndTimeLabel">Flight End Time</label>
                             <input type="datetime-local" id="flightEndTime" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                         </div>
                     </div>
 
                     <div>
-                        <label for="flightDuration" class="block text-slate-400 mb-1">Duration (Minutes)</label>
+                        <label for="flightDuration" class="block text-slate-400 mb-1" data-i18n="durationMinutesLabel">Duration (Minutes)</label>
                         <input type="number" step="0.1" id="flightDuration" min="0" placeholder="e.g. 25" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
                 </div>
 
                 <div>
-                    <label for="flightNotes" class="block text-slate-400 mb-1 font-medium">Flight Notes / Objectives</label>
-                    <textarea id="flightNotes" rows="2" placeholder="e.g. Routine visual inspection. Wind 10kts." class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500"></textarea>
+                    <label for="flightNotes" class="block text-slate-400 mb-1 font-medium" data-i18n="flightNotesLabel">Flight Notes / Objectives</label>
+                    <textarea id="flightNotes" rows="2" placeholder="e.g. Routine visual inspection. Wind 10kts." data-i18n-placeholder="flightNotesPlaceholder" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500"></textarea>
                 </div>
 
+                <!-- Custom fields (populated dynamically from Manage Fields) -->
+                <div id="customFieldsFormContainer" class="space-y-4"></div>
+
                 <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
-                    <button type="button" id="btnCancelFlight" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20">Save Flight Log</button>
+                    <button type="button" id="btnCancelFlight" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="cancelBtn">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20" data-i18n="saveFlightLogBtn">Save Flight Log</button>
                 </div>
             </form>
         </div>
@@ -523,30 +552,30 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-helicopter text-cyan-400"></i>
-                    <h3 id="modalDroneTitle" class="font-bold text-white text-base">Add New Drone</h3>
+                    <h3 id="modalDroneTitle" class="font-bold text-white text-base" data-i18n="addNewDroneTitle">Add New Drone</h3>
                 </div>
-                <button id="closeDroneModal" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button id="closeDroneModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <form id="formDrone" class="space-y-4 text-xs">
                 <input type="hidden" id="droneEditId">
                 <div>
-                    <label for="droneName" class="block text-slate-400 mb-1 font-medium">Airframe / Drone Name <span class="text-rose-400">*</span></label>
-                    <input type="text" id="droneName" required placeholder="e.g. Mavic 3 Enterprise" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
+                    <label for="droneName" class="block text-slate-400 mb-1 font-medium"><span data-i18n="droneNameLabel">Airframe / Drone Name</span> <span class="text-rose-400">*</span></label>
+                    <input type="text" id="droneName" required placeholder="e.g. Mavic 3 Enterprise" data-i18n-placeholder="droneNamePlaceholder" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
                 </div>
 
                 <div>
-                    <label for="droneModel" class="block text-slate-400 mb-1 font-medium">Model / Specification</label>
-                    <input type="text" id="droneModel" placeholder="e.g. DJI M3E" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
+                    <label for="droneModel" class="block text-slate-400 mb-1 font-medium" data-i18n="modelSpecLabel">Model / Specification</label>
+                    <input type="text" id="droneModel" placeholder="e.g. DJI M3E" data-i18n-placeholder="droneModelPlaceholder" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label for="droneHours" class="block text-slate-400 mb-1 font-medium">Base Flight Hours</label>
+                        <label for="droneHours" class="block text-slate-400 mb-1 font-medium" data-i18n="baseFlightHoursLabel">Base Flight Hours</label>
                         <input type="number" step="0.1" id="droneHours" value="0.0" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
                     <div>
-                        <label for="droneStatus" class="block text-slate-400 mb-1 font-medium">Operational Status</label>
+                        <label for="droneStatus" class="block text-slate-400 mb-1 font-medium" data-i18n="operationalStatusLabel">Operational Status</label>
                         <select id="droneStatus" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
                             <!-- Populated dynamically -->
                         </select>
@@ -554,8 +583,8 @@
                 </div>
 
                 <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
-                    <button type="button" id="btnCancelDrone" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20">Save Drone</button>
+                    <button type="button" id="btnCancelDrone" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="cancelBtn">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20" data-i18n="saveDroneBtn">Save Drone</button>
                 </div>
             </form>
         </div>
@@ -567,17 +596,17 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-sliders text-cyan-400"></i>
-                    <h3 class="font-bold text-white text-base">Edit Drone Status Options</h3>
+                    <h3 class="font-bold text-white text-base" data-i18n="editStatusOptionsTitle">Edit Drone Status Options</h3>
                 </div>
-                <button id="closeStatusesModal" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button id="closeStatusesModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
             <div class="space-y-4 text-xs">
-                <p class="text-slate-400">Add custom operational statuses or remove existing ones from your fleet dropdowns.</p>
+                <p class="text-slate-400" data-i18n="editStatusOptionsDesc">Add custom operational statuses or remove existing ones from your fleet dropdowns.</p>
 
                 <form id="formAddStatus" class="flex gap-2">
-                    <label for="newStatusInput" class="sr-only">New status name</label>
-                    <input type="text" id="newStatusInput" placeholder="e.g. In Testing / Standby" required class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 text-xs">
-                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition">Add</button>
+                    <label for="newStatusInput" class="sr-only" data-i18n="newStatusNameSr">New status name</label>
+                    <input type="text" id="newStatusInput" placeholder="e.g. In Testing / Standby" data-i18n-placeholder="newStatusPlaceholder" required class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 text-xs">
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition" data-i18n="addBtn">Add</button>
                 </form>
 
                 <div class="border border-slate-800 rounded-xl bg-slate-950/50 p-3 space-y-2 max-h-48 overflow-y-auto" id="statusListContainer">
@@ -585,7 +614,41 @@
                 </div>
             </div>
             <div class="pt-2 flex justify-end border-t border-slate-800">
-                <button type="button" id="btnCloseStatuses" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition">Done</button>
+                <button type="button" id="btnCloseStatuses" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition" data-i18n="doneBtn">Done</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL: MANAGE CUSTOM FIELDS -->
+    <div id="modalManageFields" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-table-columns text-cyan-400"></i>
+                    <h3 class="font-bold text-white text-base" data-i18n="manageFieldsModalTitle">Manage Custom Fields</h3>
+                </div>
+                <button id="closeFieldsModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="space-y-4 text-xs">
+                <p class="text-slate-400" data-i18n="manageFieldsDesc">Add extra text or numeric fields to capture on every flight log. Numeric fields are totaled per airframe and charted on the dashboard.</p>
+
+                <form id="formAddField" class="flex flex-col sm:flex-row gap-2">
+                    <label for="newFieldLabel" class="sr-only" data-i18n="newFieldNameSr">New field name</label>
+                    <input type="text" id="newFieldLabel" placeholder="e.g. Points Scored" data-i18n-placeholder="newFieldPlaceholder" required class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 text-xs min-w-0">
+                    <label for="newFieldType" class="sr-only" data-i18n="fieldTypeSr">Field type</label>
+                    <select id="newFieldType" class="px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 text-xs shrink-0">
+                        <option value="text" data-i18n="fieldTypeText">Text</option>
+                        <option value="number" data-i18n="fieldTypeNumeric">Numeric</option>
+                    </select>
+                    <button type="submit" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shrink-0" data-i18n="addBtn">Add</button>
+                </form>
+
+                <div class="border border-slate-800 rounded-xl bg-slate-950/50 p-3 space-y-2 max-h-48 overflow-y-auto" id="fieldsListContainer">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+            <div class="pt-2 flex justify-end border-t border-slate-800">
+                <button type="button" id="btnCloseFields" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold transition" data-i18n="doneBtn">Done</button>
             </div>
         </div>
     </div>
@@ -596,41 +659,41 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-battery-three-quarters text-cyan-400"></i>
-                    <h3 id="modalBatteryTitle" class="font-bold text-white text-base">Add New Battery</h3>
+                    <h3 id="modalBatteryTitle" class="font-bold text-white text-base" data-i18n="addNewBatteryTitle">Add New Battery</h3>
                 </div>
-                <button id="closeBatteryModal" class="text-slate-400 hover:text-white p-1"><i class="fa-solid fa-xmark text-lg"></i></button>
+                <button id="closeBatteryModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <form id="formBattery" class="space-y-4 text-xs">
                 <input type="hidden" id="batteryEditId">
                 <div>
-                    <label for="batteryName" class="block text-slate-400 mb-1 font-medium">Battery Label / Name <span class="text-rose-400">*</span></label>
-                    <input type="text" id="batteryName" required placeholder="e.g. TB60 Pack #1" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
+                    <label for="batteryName" class="block text-slate-400 mb-1 font-medium"><span data-i18n="batteryLabelName">Battery Label / Name</span> <span class="text-rose-400">*</span></label>
+                    <input type="text" id="batteryName" required placeholder="e.g. TB60 Pack #1" data-i18n-placeholder="batteryNamePlaceholder" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
                 </div>
 
                 <div class="grid grid-cols-2 gap-3">
                     <div>
-                        <label for="batteryCycles" class="block text-slate-400 mb-1 font-medium">Charge Cycles</label>
+                        <label for="batteryCycles" class="block text-slate-400 mb-1 font-medium" data-i18n="chargeCyclesLabel">Charge Cycles</label>
                         <input type="number" id="batteryCycles" value="0" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
                     <div>
-                        <label for="batteryHours" class="block text-slate-400 mb-1 font-medium">Base Flight Time (Hrs)</label>
+                        <label for="batteryHours" class="block text-slate-400 mb-1 font-medium" data-i18n="baseFlightTimeHrsLabel">Base Flight Time (Hrs)</label>
                         <input type="number" step="0.1" id="batteryHours" value="0.0" min="0" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
                 </div>
 
                 <div>
-                    <label for="batteryStatus" class="block text-slate-400 mb-1 font-medium">Battery Health Status</label>
+                    <label for="batteryStatus" class="block text-slate-400 mb-1 font-medium" data-i18n="batteryHealthStatusLabel">Battery Health Status</label>
                     <select id="batteryStatus" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500">
-                        <option value="Good">Good (Optimal)</option>
-                        <option value="Warning">Warning (High Cycles)</option>
-                        <option value="Retired">Retired / Storage</option>
+                        <option value="Good" data-i18n="batteryStatusGood">Good (Optimal)</option>
+                        <option value="Warning" data-i18n="batteryStatusWarning">Warning (High Cycles)</option>
+                        <option value="Retired" data-i18n="batteryStatusRetired">Retired / Storage</option>
                     </select>
                 </div>
 
                 <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
-                    <button type="button" id="btnCancelBattery" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition">Cancel</button>
-                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20">Save Battery</button>
+                    <button type="button" id="btnCancelBattery" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="cancelBtn">Cancel</button>
+                    <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20" data-i18n="saveBatteryBtn">Save Battery</button>
                 </div>
             </form>
         </div>
@@ -643,12 +706,12 @@
                 <div class="p-2 rounded-lg bg-rose-950/60 border border-rose-800/40 text-rose-400">
                     <i class="fa-solid fa-triangle-exclamation"></i>
                 </div>
-                <h3 class="font-bold text-white text-base">Confirm Action</h3>
+                <h3 class="font-bold text-white text-base" data-i18n="confirmActionTitle">Confirm Action</h3>
             </div>
             <p id="modalConfirmMessage" class="text-xs text-slate-400">Are you sure?</p>
             <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
-                <button type="button" id="btnConfirmCancel" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition">Cancel</button>
-                <button type="button" id="btnConfirmOk" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition shadow-lg shadow-rose-500/20">Delete</button>
+                <button type="button" id="btnConfirmCancel" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition" data-i18n="cancelBtn">Cancel</button>
+                <button type="button" id="btnConfirmOk" class="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold transition shadow-lg shadow-rose-500/20" data-i18n="deleteBtn">Delete</button>
             </div>
         </div>
     </div>
@@ -658,18 +721,18 @@
 
     <!-- Install App Prompt -->
     <div id="installPrompt" class="hidden fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 p-4 rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
-        <button type="button" id="installDismiss" aria-label="Dismiss" class="absolute top-2 right-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition">
+        <button type="button" id="installDismiss" aria-label="Dismiss" data-i18n-aria-label="installDismissAriaLabel" class="absolute top-2 right-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition">
             <i class="fa-solid fa-xmark text-sm"></i>
         </button>
         <div class="flex items-start gap-3">
             <img src="icon-192.png" alt="FlyLog" class="w-12 h-12 rounded-xl flex-shrink-0 object-cover">
             <div>
-                <h3 class="text-sm font-semibold text-slate-100">Install FlyLog Pro</h3>
-                <p class="text-xs text-slate-400 mt-0.5">Add to home screen for quick, offline access</p>
+                <h3 class="text-sm font-semibold text-slate-100" data-i18n="installPromptTitle">Install FlyLog Pro</h3>
+                <p class="text-xs text-slate-400 mt-0.5" data-i18n="installPromptDesc">Add to home screen for quick, offline access</p>
             </div>
         </div>
         <button type="button" id="installBtn" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-600/20">
-            <i class="fa-solid fa-download"></i> Install App
+            <i class="fa-solid fa-download"></i> <span data-i18n="installBtnLabel">Install App</span>
         </button>
     </div>
 
@@ -750,12 +813,640 @@
                 .replace(/'/g, '&#39;');
         }
 
+        // ================= i18n =================
+        // Language preference lives under its own storage key, entirely separate
+        // from the flylog_* data keys above, so switching languages never touches
+        // saved flights/drones/batteries/fields.
+        const LANG_KEY = 'flylog-lang';
+
+        const translations = {
+            en: {
+                offlineBadge: "Offline — changes saved locally",
+                weatherClearSky: "Clear Sky",
+                unitKnots: "kts",
+                unitSats: "Sats",
+                langSelectorAriaLabel: "Language",
+                logFlightBtn: "Log Flight",
+                navSectionOperations: "Operations",
+                navDashboard: "Dashboard",
+                navFlightLogs: "Flight Logs",
+                navSectionAssets: "Assets & Fleet",
+                navFleetDrones: "Fleet & Drones",
+                navBatteries: "Batteries",
+                databaseSyncLabel: "Database Sync",
+                localStorageLabel: "Local Storage",
+                airframeReadinessLabel: "Airframe Readiness",
+                statTotalFlightTimeLabel: "Total Flight Time",
+                cumulativeLabel: "Cumulative",
+                viewLogbookLink: "View Logbook",
+                statLoggedFlightsLabel: "Logged Flights",
+                totalMissionsLabel: "Total Missions",
+                statActiveAirframesLabel: "Active Airframes",
+                fleetSizeLabel: "Fleet Size",
+                manageFleetLink: "Manage Fleet",
+                statBatteriesTrackedLabel: "Batteries Tracked",
+                powerPacksLabel: "Power Packs",
+                managePacksLink: "Manage Packs",
+                chartFlightHoursTrend: "Flight Hours Trend",
+                monthlyAggregates: "Monthly Aggregates",
+                chartAirframeUsage: "Airframe Usage",
+                flightShareLabel: "Flight Share",
+                recentOperationsTitle: "Recent Operations",
+                recentOperationsSubtitle: "Latest recorded UAV flights",
+                colAirframeDrone: "Airframe / Drone",
+                colBatteryLabel: "Battery Label",
+                colFlightStart: "Flight Start",
+                colFlightEnd: "Flight End",
+                colDuration: "Duration",
+                colNotes: "Notes",
+                flightLogbookTitle: "Flight Logbook",
+                flightLogbookSubtitle: "Flight records, timeline filters, and CSV export",
+                exportBackupTitle: "Download a full JSON backup of all flights, drones, batteries and statuses",
+                exportBackupBtn: "Export Backup",
+                importBackupTitle: "Restore or merge data from a previously exported JSON backup",
+                importBackupBtn: "Import Backup",
+                exportCsvBtn: "Export CSV",
+                manageFieldsTitle: "Add or remove custom data fields for flight logs",
+                manageFieldsBtn: "Manage Fields",
+                newFlightBtn: "New Flight",
+                filterSearchPlaceholder: "Search notes, drones, battery labels...",
+                allAirframesOption: "All Airframes",
+                dateRangeLabel: "Date Range",
+                presetThisMonth: "This Month",
+                fromLabel: "From",
+                startDateTitle: "Start Date",
+                toLabel: "To",
+                endDateTitle: "End Date",
+                resetBtn: "Reset",
+                colActions: "Actions",
+                fleetMgmtTitle: "Airframe Fleet Management",
+                fleetMgmtSubtitle: "Track drone operational readiness, frame hours, and flight counts",
+                editStatusListBtn: "Edit Status List",
+                addDroneBtn: "Add Drone",
+                batteryInventoryTitle: "Battery Inventory",
+                batteryInventorySubtitle: "Track charge cycles, total flight duration, and health status",
+                addBatteryBtn: "Add Battery Pack",
+                logFlightModalTitle: "Log UAV Flight",
+                closeAriaLabel: "Close",
+                addNewDroneTitle: "Add New Drone",
+                batteryLabelOptional: "Battery Label (Optional)",
+                noneStandardOption: "-- None / Standard --",
+                addNewBatteryTitle: "Add New Battery",
+                autoCalcLabel: "Auto-Calculator (Fill any 2 fields to derive the 3rd)",
+                flightStartTimeLabel: "Flight Start Time",
+                flightEndTimeLabel: "Flight End Time",
+                durationMinutesLabel: "Duration (Minutes)",
+                flightNotesLabel: "Flight Notes / Objectives",
+                flightNotesPlaceholder: "e.g. Routine visual inspection. Wind 10kts.",
+                cancelBtn: "Cancel",
+                saveFlightLogBtn: "Save Flight Log",
+                droneNameLabel: "Airframe / Drone Name",
+                droneNamePlaceholder: "e.g. Mavic 3 Enterprise",
+                modelSpecLabel: "Model / Specification",
+                droneModelPlaceholder: "e.g. DJI M3E",
+                baseFlightHoursLabel: "Base Flight Hours",
+                operationalStatusLabel: "Operational Status",
+                saveDroneBtn: "Save Drone",
+                editStatusOptionsTitle: "Edit Drone Status Options",
+                editStatusOptionsDesc: "Add custom operational statuses or remove existing ones from your fleet dropdowns.",
+                newStatusNameSr: "New status name",
+                newStatusPlaceholder: "e.g. In Testing / Standby",
+                addBtn: "Add",
+                doneBtn: "Done",
+                manageFieldsModalTitle: "Manage Custom Fields",
+                manageFieldsDesc: "Add extra text or numeric fields to capture on every flight log. Numeric fields are totaled per airframe and charted on the dashboard.",
+                newFieldNameSr: "New field name",
+                newFieldPlaceholder: "e.g. Points Scored",
+                fieldTypeSr: "Field type",
+                fieldTypeText: "Text",
+                fieldTypeNumeric: "Numeric",
+                batteryLabelName: "Battery Label / Name",
+                batteryNamePlaceholder: "e.g. TB60 Pack #1",
+                chargeCyclesLabel: "Charge Cycles",
+                baseFlightTimeHrsLabel: "Base Flight Time (Hrs)",
+                batteryHealthStatusLabel: "Battery Health Status",
+                batteryStatusGood: "Good (Optimal)",
+                batteryStatusWarning: "Warning (High Cycles)",
+                batteryStatusRetired: "Retired / Storage",
+                saveBatteryBtn: "Save Battery",
+                confirmActionTitle: "Confirm Action",
+                deleteBtn: "Delete",
+                installDismissAriaLabel: "Dismiss",
+                installPromptTitle: "Install FlyLog Pro",
+                installPromptDesc: "Add to home screen for quick, offline access",
+                installBtnLabel: "Install App",
+
+                editDroneTitle: "Edit Drone",
+                editBatteryTitle: "Edit Battery Pack",
+                readyStatusFormat: "{pct}% Ready",
+                unitHrs: "hrs",
+                unitMin: "min",
+                fleetFlightCount_one: "{n} flight",
+                fleetFlightCount_other: "{n} flights",
+                totalFieldLabel: "Total {label}",
+                batteryCyclesValue_one: "{n} cycle",
+                batteryCyclesValue_other: "{n} cycles",
+                customFieldChartTitle: "{label} Trend",
+                noFlightLogsMatch: "No flight logs matched your search filters",
+                noRecentFlights: "No recent flights recorded",
+                defaultStatusSuffix: "(default)",
+                confirmDefaultMsg: "Are you sure?",
+                toastStorageFull: "Could not save changes locally — storage may be full",
+                toastSelectAirframe: "Please select an airframe",
+                toastFlightLogged: "Flight logged successfully!",
+                toastDroneUpdated: "Drone updated!",
+                toastDroneAdded: "New drone added!",
+                toastBatteryUpdated: "Battery updated!",
+                toastBatteryAdded: "New battery pack added!",
+                toastStatusAdded: "Status \"{status}\" added",
+                toastMinStatusRequired: "At least one status option is required",
+                toastReadyStatusProtected: "The \"Ready\" status is required and can't be removed",
+                toastReassignBeforeRemove: "Reassign drones using \"{status}\" before removing it",
+                toastStatusRemoved: "Status \"{status}\" removed",
+                toastFlightDeleted: "Flight log deleted",
+                deleteDroneConfirmBase: "Delete \"{name}\"?",
+                keptInLogbookNote_one: " Its {n} logged flight will be kept in the logbook.",
+                keptInLogbookNote_other: " Its {n} logged flights will be kept in the logbook.",
+                toastDroneStatusChanged: "{name} status: {status}",
+                toastDroneDeleted: "Drone deleted",
+                toastBatteryDeleted: "Battery deleted",
+                confirmDeleteFlightMsg: "Delete this flight log? This cannot be undone.",
+                toastNoFlightsExport: "No flight logs to export",
+                toastCsvExported: "CSV export downloaded",
+                toastBackupDownloaded: "Backup downloaded",
+                toastCouldNotReadFile: "Could not read that file",
+                toastNotValidJson: "That file is not valid JSON",
+                toastNotFlyLogBackup: "That file doesn't look like a FlyLog backup",
+                toastImportedSummary: "Imported {flights} flights, {drones} drones, {batteries} batteries",
+                toastFieldExists: "A field named \"{label}\" already exists",
+                toastFieldAdded: "Field \"{label}\" added",
+                confirmRemoveFieldMsg: "Remove custom field \"{label}\"? Its recorded values will be deleted from all flight logs. This cannot be undone.",
+                toastFieldRemoved: "Field \"{label}\" removed",
+                toastFieldRemovedGeneric: "Field removed",
+                deleteLogTitle: "Delete Log",
+                uavPlatformFallback: "UAV Platform",
+                editActionBtn: "Edit",
+                flightTimeLabel: "Flight Time",
+                requiredDefaultStatusTitle: "Required default status",
+                removeOptionTitle: "Remove option",
+                noCustomFieldsYet: "No custom fields yet",
+                removeFieldTitle: "Remove field",
+                unnamedDroneFallback: "Unnamed Drone",
+                unnamedBatteryFallback: "Unnamed Battery",
+                unknownAirframeFallback: "Unknown Airframe",
+                batteryStatusShortGood: "Good",
+                batteryStatusShortWarning: "Warning",
+                batteryStatusShortRetired: "Retired"
+            },
+            uk: {
+                offlineBadge: "Офлайн — зміни збережено локально",
+                weatherClearSky: "Ясно",
+                unitKnots: "вузл.",
+                unitSats: "супутників",
+                langSelectorAriaLabel: "Мова",
+                logFlightBtn: "Політ",
+                navSectionOperations: "Операції",
+                navDashboard: "Панель приладів",
+                navFlightLogs: "Журнал польотів",
+                navSectionAssets: "Активи та флот",
+                navFleetDrones: "Флот і дрони",
+                navBatteries: "Батареї",
+                databaseSyncLabel: "Синхронізація БД",
+                localStorageLabel: "Локальне сховище",
+                airframeReadinessLabel: "Готовність флоту",
+                statTotalFlightTimeLabel: "Загальний час польоту",
+                cumulativeLabel: "Сукупно",
+                viewLogbookLink: "Переглянути журнал",
+                statLoggedFlightsLabel: "Записані польоти",
+                totalMissionsLabel: "Усього місій",
+                statActiveAirframesLabel: "Активні дрони",
+                fleetSizeLabel: "Розмір флоту",
+                manageFleetLink: "Керувати флотом",
+                statBatteriesTrackedLabel: "Відстежувані батареї",
+                powerPacksLabel: "Блоки живлення",
+                managePacksLink: "Керувати блоками",
+                chartFlightHoursTrend: "Динаміка годин польоту",
+                monthlyAggregates: "Місячні підсумки",
+                chartAirframeUsage: "Використання дронів",
+                flightShareLabel: "Частка польотів",
+                recentOperationsTitle: "Останні операції",
+                recentOperationsSubtitle: "Останні зареєстровані польоти БПЛА",
+                colAirframeDrone: "Дрон / Апарат",
+                colBatteryLabel: "Мітка батареї",
+                colFlightStart: "Початок польоту",
+                colFlightEnd: "Кінець польоту",
+                colDuration: "Тривалість",
+                colNotes: "Нотатки",
+                flightLogbookTitle: "Журнал польотів",
+                flightLogbookSubtitle: "Записи польотів, фільтри за датою та експорт у CSV",
+                exportBackupTitle: "Завантажити повну резервну копію JSON усіх польотів, дронів, батарей і статусів",
+                exportBackupBtn: "Експорт резервної копії",
+                importBackupTitle: "Відновити або об'єднати дані з раніше експортованої резервної копії JSON",
+                importBackupBtn: "Імпорт резервної копії",
+                exportCsvBtn: "Експорт CSV",
+                manageFieldsTitle: "Додати або видалити користувацькі поля даних для журналу польотів",
+                manageFieldsBtn: "Керувати полями",
+                newFlightBtn: "Новий політ",
+                filterSearchPlaceholder: "Пошук за нотатками, дронами, мітками батарей...",
+                allAirframesOption: "Усі апарати",
+                dateRangeLabel: "Діапазон дат",
+                presetThisMonth: "Цей місяць",
+                fromLabel: "Від",
+                startDateTitle: "Дата початку",
+                toLabel: "До",
+                endDateTitle: "Дата закінчення",
+                resetBtn: "Скинути",
+                colActions: "Дії",
+                fleetMgmtTitle: "Управління флотом дронів",
+                fleetMgmtSubtitle: "Відстежуйте готовність дронів, налітані години та кількість польотів",
+                editStatusListBtn: "Редагувати статуси",
+                addDroneBtn: "Додати дрон",
+                batteryInventoryTitle: "Облік батарей",
+                batteryInventorySubtitle: "Відстежуйте цикли заряду, загальний час польоту та стан справності",
+                addBatteryBtn: "Додати блок батареї",
+                logFlightModalTitle: "Записати політ БПЛА",
+                closeAriaLabel: "Закрити",
+                addNewDroneTitle: "Додати новий дрон",
+                batteryLabelOptional: "Мітка батареї (необов'язково)",
+                noneStandardOption: "-- Немає / Стандартна --",
+                addNewBatteryTitle: "Додати нову батарею",
+                autoCalcLabel: "Автокалькулятор (заповніть будь-які 2 поля, щоб визначити третє)",
+                flightStartTimeLabel: "Час початку польоту",
+                flightEndTimeLabel: "Час завершення польоту",
+                durationMinutesLabel: "Тривалість (хвилини)",
+                flightNotesLabel: "Нотатки / цілі польоту",
+                flightNotesPlaceholder: "напр., Плановий візуальний огляд. Вітер 10 вузлів.",
+                cancelBtn: "Скасувати",
+                saveFlightLogBtn: "Зберегти запис польоту",
+                droneNameLabel: "Назва дрона / апарата",
+                droneNamePlaceholder: "напр., Mavic 3 Enterprise",
+                modelSpecLabel: "Модель / Специфікація",
+                droneModelPlaceholder: "напр., DJI M3E",
+                baseFlightHoursLabel: "Базові години польоту",
+                operationalStatusLabel: "Робочий статус",
+                saveDroneBtn: "Зберегти дрон",
+                editStatusOptionsTitle: "Редагувати варіанти статусів дрона",
+                editStatusOptionsDesc: "Додайте власні робочі статуси або видаліть наявні зі спадних списків флоту.",
+                newStatusNameSr: "Назва нового статусу",
+                newStatusPlaceholder: "напр., На тестуванні / Резерв",
+                addBtn: "Додати",
+                doneBtn: "Готово",
+                manageFieldsModalTitle: "Керування користувацькими полями",
+                manageFieldsDesc: "Додайте текстові або числові поля для запису в кожному польоті. Числові поля підсумовуються по кожному апарату й відображаються на графіку панелі приладів.",
+                newFieldNameSr: "Назва нового поля",
+                newFieldPlaceholder: "напр., Набрані очки",
+                fieldTypeSr: "Тип поля",
+                fieldTypeText: "Текст",
+                fieldTypeNumeric: "Числове",
+                batteryLabelName: "Мітка / назва батареї",
+                batteryNamePlaceholder: "напр., TB60 Pack #1",
+                chargeCyclesLabel: "Цикли заряду",
+                baseFlightTimeHrsLabel: "Базовий час польоту (год)",
+                batteryHealthStatusLabel: "Стан справності батареї",
+                batteryStatusGood: "Добрий (оптимальний)",
+                batteryStatusWarning: "Попередження (багато циклів)",
+                batteryStatusRetired: "Виведено з експлуатації / Зберігання",
+                saveBatteryBtn: "Зберегти батарею",
+                confirmActionTitle: "Підтвердження дії",
+                deleteBtn: "Видалити",
+                installDismissAriaLabel: "Закрити",
+                installPromptTitle: "Встановити FlyLog Pro",
+                installPromptDesc: "Додайте на головний екран для швидкого офлайн-доступу",
+                installBtnLabel: "Встановити застосунок",
+
+                editDroneTitle: "Редагувати дрон",
+                editBatteryTitle: "Редагувати блок батареї",
+                readyStatusFormat: "{pct}% готовності",
+                unitHrs: "год",
+                unitMin: "хв",
+                fleetFlightCount_one: "{n} політ",
+                fleetFlightCount_few: "{n} польоти",
+                fleetFlightCount_many: "{n} польотів",
+                fleetFlightCount_other: "{n} польотів",
+                totalFieldLabel: "Всього: {label}",
+                batteryCyclesValue_one: "{n} цикл",
+                batteryCyclesValue_few: "{n} цикли",
+                batteryCyclesValue_many: "{n} циклів",
+                batteryCyclesValue_other: "{n} циклів",
+                customFieldChartTitle: "Динаміка: {label}",
+                noFlightLogsMatch: "Жоден запис польоту не відповідає вашим фільтрам пошуку",
+                noRecentFlights: "Немає нещодавніх польотів",
+                defaultStatusSuffix: "(за замовчуванням)",
+                confirmDefaultMsg: "Ви впевнені?",
+                toastStorageFull: "Не вдалося зберегти зміни локально — сховище може бути заповнене",
+                toastSelectAirframe: "Будь ласка, виберіть апарат",
+                toastFlightLogged: "Політ успішно записано!",
+                toastDroneUpdated: "Дрон оновлено!",
+                toastDroneAdded: "Новий дрон додано!",
+                toastBatteryUpdated: "Батарею оновлено!",
+                toastBatteryAdded: "Новий блок батареї додано!",
+                toastStatusAdded: "Статус «{status}» додано",
+                toastMinStatusRequired: "Потрібен хоча б один варіант статусу",
+                toastReadyStatusProtected: "Статус «Ready» обов'язковий і не може бути видалений",
+                toastReassignBeforeRemove: "Перепризначте дрони зі статусом «{status}», перш ніж видаляти його",
+                toastStatusRemoved: "Статус «{status}» видалено",
+                toastFlightDeleted: "Запис польоту видалено",
+                deleteDroneConfirmBase: "Видалити «{name}»?",
+                keptInLogbookNote_one: " Його {n} записаний політ залишиться в журналі.",
+                keptInLogbookNote_few: " Його {n} записані польоти залишаться в журналі.",
+                keptInLogbookNote_many: " Його {n} записаних польотів залишаться в журналі.",
+                keptInLogbookNote_other: " Його {n} записаних польотів залишаться в журналі.",
+                toastDroneStatusChanged: "{name}: статус {status}",
+                toastDroneDeleted: "Дрон видалено",
+                toastBatteryDeleted: "Батарею видалено",
+                confirmDeleteFlightMsg: "Видалити цей запис польоту? Цю дію неможливо скасувати.",
+                toastNoFlightsExport: "Немає записів польотів для експорту",
+                toastCsvExported: "Файл CSV завантажено",
+                toastBackupDownloaded: "Резервну копію завантажено",
+                toastCouldNotReadFile: "Не вдалося прочитати файл",
+                toastNotValidJson: "Файл не є дійсним JSON",
+                toastNotFlyLogBackup: "Файл не схожий на резервну копію FlyLog",
+                toastImportedSummary: "Імпортовано: польотів — {flights}, дронів — {drones}, батарей — {batteries}",
+                toastFieldExists: "Поле з назвою «{label}» вже існує",
+                toastFieldAdded: "Поле «{label}» додано",
+                confirmRemoveFieldMsg: "Видалити користувацьке поле «{label}»? Його записані значення буде видалено з усіх польотів. Цю дію неможливо скасувати.",
+                toastFieldRemoved: "Поле «{label}» видалено",
+                toastFieldRemovedGeneric: "Поле видалено",
+                deleteLogTitle: "Видалити запис",
+                uavPlatformFallback: "Платформа БПЛА",
+                editActionBtn: "Редагувати",
+                flightTimeLabel: "Час польоту",
+                requiredDefaultStatusTitle: "Обов'язковий стандартний статус",
+                removeOptionTitle: "Видалити варіант",
+                noCustomFieldsYet: "Ще немає користувацьких полів",
+                removeFieldTitle: "Видалити поле",
+                unnamedDroneFallback: "Дрон без назви",
+                unnamedBatteryFallback: "Батарея без назви",
+                unknownAirframeFallback: "Невідомий апарат",
+                batteryStatusShortGood: "Добрий",
+                batteryStatusShortWarning: "Попередження",
+                batteryStatusShortRetired: "Виведено"
+            },
+            "pt-BR": {
+                offlineBadge: "Offline — alterações salvas localmente",
+                weatherClearSky: "Céu limpo",
+                unitKnots: "nós",
+                unitSats: "Sats",
+                langSelectorAriaLabel: "Idioma",
+                logFlightBtn: "Registrar voo",
+                navSectionOperations: "Operações",
+                navDashboard: "Painel",
+                navFlightLogs: "Registro de voos",
+                navSectionAssets: "Ativos e frota",
+                navFleetDrones: "Frota e drones",
+                navBatteries: "Baterias",
+                databaseSyncLabel: "Sincronização de dados",
+                localStorageLabel: "Armazenamento local",
+                airframeReadinessLabel: "Prontidão da frota",
+                statTotalFlightTimeLabel: "Tempo total de voo",
+                cumulativeLabel: "Acumulado",
+                viewLogbookLink: "Ver registro",
+                statLoggedFlightsLabel: "Voos registrados",
+                totalMissionsLabel: "Total de missões",
+                statActiveAirframesLabel: "Aeronaves ativas",
+                fleetSizeLabel: "Tamanho da frota",
+                manageFleetLink: "Gerenciar frota",
+                statBatteriesTrackedLabel: "Baterias monitoradas",
+                powerPacksLabel: "Pacotes de energia",
+                managePacksLink: "Gerenciar pacotes",
+                chartFlightHoursTrend: "Tendência de horas de voo",
+                monthlyAggregates: "Totais mensais",
+                chartAirframeUsage: "Uso por aeronave",
+                flightShareLabel: "Participação nos voos",
+                recentOperationsTitle: "Operações recentes",
+                recentOperationsSubtitle: "Últimos voos de drone registrados",
+                colAirframeDrone: "Aeronave / Drone",
+                colBatteryLabel: "Etiqueta da bateria",
+                colFlightStart: "Início do voo",
+                colFlightEnd: "Fim do voo",
+                colDuration: "Duração",
+                colNotes: "Notas",
+                flightLogbookTitle: "Registro de voos",
+                flightLogbookSubtitle: "Registros de voo, filtros de período e exportação em CSV",
+                exportBackupTitle: "Baixar um backup completo em JSON de todos os voos, drones, baterias e status",
+                exportBackupBtn: "Exportar backup",
+                importBackupTitle: "Restaurar ou mesclar dados de um backup em JSON exportado anteriormente",
+                importBackupBtn: "Importar backup",
+                exportCsvBtn: "Exportar CSV",
+                manageFieldsTitle: "Adicionar ou remover campos de dados personalizados para os registros de voo",
+                manageFieldsBtn: "Gerenciar campos",
+                newFlightBtn: "Novo voo",
+                filterSearchPlaceholder: "Buscar notas, drones, etiquetas de bateria...",
+                allAirframesOption: "Todas as aeronaves",
+                dateRangeLabel: "Período",
+                presetThisMonth: "Este mês",
+                fromLabel: "De",
+                startDateTitle: "Data inicial",
+                toLabel: "Até",
+                endDateTitle: "Data final",
+                resetBtn: "Redefinir",
+                colActions: "Ações",
+                fleetMgmtTitle: "Gestão da frota de aeronaves",
+                fleetMgmtSubtitle: "Acompanhe a prontidão operacional, horas de célula e número de voos dos drones",
+                editStatusListBtn: "Editar lista de status",
+                addDroneBtn: "Adicionar drone",
+                batteryInventoryTitle: "Inventário de baterias",
+                batteryInventorySubtitle: "Acompanhe ciclos de carga, tempo total de voo e estado de saúde",
+                addBatteryBtn: "Adicionar bateria",
+                logFlightModalTitle: "Registrar voo de drone",
+                closeAriaLabel: "Fechar",
+                addNewDroneTitle: "Adicionar novo drone",
+                batteryLabelOptional: "Etiqueta da bateria (opcional)",
+                noneStandardOption: "-- Nenhuma / Padrão --",
+                addNewBatteryTitle: "Adicionar nova bateria",
+                autoCalcLabel: "Calculadora automática (preencha 2 campos quaisquer para derivar o 3º)",
+                flightStartTimeLabel: "Hora de início do voo",
+                flightEndTimeLabel: "Hora de término do voo",
+                durationMinutesLabel: "Duração (minutos)",
+                flightNotesLabel: "Notas / objetivos do voo",
+                flightNotesPlaceholder: "ex.: Inspeção visual de rotina. Vento de 10 nós.",
+                cancelBtn: "Cancelar",
+                saveFlightLogBtn: "Salvar registro de voo",
+                droneNameLabel: "Nome da aeronave / drone",
+                droneNamePlaceholder: "ex.: Mavic 3 Enterprise",
+                modelSpecLabel: "Modelo / Especificação",
+                droneModelPlaceholder: "ex.: DJI M3E",
+                baseFlightHoursLabel: "Horas de voo base",
+                operationalStatusLabel: "Status operacional",
+                saveDroneBtn: "Salvar drone",
+                editStatusOptionsTitle: "Editar opções de status do drone",
+                editStatusOptionsDesc: "Adicione status operacionais personalizados ou remova os existentes das listas suspensas da frota.",
+                newStatusNameSr: "Nome do novo status",
+                newStatusPlaceholder: "ex.: Em teste / Em espera",
+                addBtn: "Adicionar",
+                doneBtn: "Concluído",
+                manageFieldsModalTitle: "Gerenciar campos personalizados",
+                manageFieldsDesc: "Adicione campos de texto ou numéricos extras para registrar em cada voo. Campos numéricos são totalizados por aeronave e exibidos em gráfico no painel.",
+                newFieldNameSr: "Nome do novo campo",
+                newFieldPlaceholder: "ex.: Pontos marcados",
+                fieldTypeSr: "Tipo de campo",
+                fieldTypeText: "Texto",
+                fieldTypeNumeric: "Numérico",
+                batteryLabelName: "Etiqueta / nome da bateria",
+                batteryNamePlaceholder: "ex.: TB60 Pack #1",
+                chargeCyclesLabel: "Ciclos de carga",
+                baseFlightTimeHrsLabel: "Tempo de voo base (h)",
+                batteryHealthStatusLabel: "Status de saúde da bateria",
+                batteryStatusGood: "Boa (ideal)",
+                batteryStatusWarning: "Atenção (muitos ciclos)",
+                batteryStatusRetired: "Desativada / Armazenada",
+                saveBatteryBtn: "Salvar bateria",
+                confirmActionTitle: "Confirmar ação",
+                deleteBtn: "Excluir",
+                installDismissAriaLabel: "Dispensar",
+                installPromptTitle: "Instalar FlyLog Pro",
+                installPromptDesc: "Adicione à tela inicial para acesso rápido e offline",
+                installBtnLabel: "Instalar aplicativo",
+
+                editDroneTitle: "Editar drone",
+                editBatteryTitle: "Editar bateria",
+                readyStatusFormat: "{pct}% pronta",
+                unitHrs: "h",
+                unitMin: "min",
+                fleetFlightCount_one: "{n} voo",
+                fleetFlightCount_other: "{n} voos",
+                totalFieldLabel: "Total de {label}",
+                batteryCyclesValue_one: "{n} ciclo",
+                batteryCyclesValue_other: "{n} ciclos",
+                customFieldChartTitle: "Tendência de {label}",
+                noFlightLogsMatch: "Nenhum registro de voo corresponde aos filtros de busca",
+                noRecentFlights: "Nenhum voo recente registrado",
+                defaultStatusSuffix: "(padrão)",
+                confirmDefaultMsg: "Tem certeza?",
+                toastStorageFull: "Não foi possível salvar as alterações localmente — o armazenamento pode estar cheio",
+                toastSelectAirframe: "Selecione uma aeronave",
+                toastFlightLogged: "Voo registrado com sucesso!",
+                toastDroneUpdated: "Drone atualizado!",
+                toastDroneAdded: "Novo drone adicionado!",
+                toastBatteryUpdated: "Bateria atualizada!",
+                toastBatteryAdded: "Nova bateria adicionada!",
+                toastStatusAdded: "Status \"{status}\" adicionado",
+                toastMinStatusRequired: "É necessária pelo menos uma opção de status",
+                toastReadyStatusProtected: "O status \"Ready\" é obrigatório e não pode ser removido",
+                toastReassignBeforeRemove: "Reatribua os drones que usam \"{status}\" antes de removê-lo",
+                toastStatusRemoved: "Status \"{status}\" removido",
+                toastFlightDeleted: "Registro de voo excluído",
+                deleteDroneConfirmBase: "Excluir \"{name}\"?",
+                keptInLogbookNote_one: " Seu {n} voo registrado será mantido no registro.",
+                keptInLogbookNote_other: " Seus {n} voos registrados serão mantidos no registro.",
+                toastDroneStatusChanged: "{name} status: {status}",
+                toastDroneDeleted: "Drone excluído",
+                toastBatteryDeleted: "Bateria excluída",
+                confirmDeleteFlightMsg: "Excluir este registro de voo? Esta ação não pode ser desfeita.",
+                toastNoFlightsExport: "Não há registros de voo para exportar",
+                toastCsvExported: "Exportação CSV baixada",
+                toastBackupDownloaded: "Backup baixado",
+                toastCouldNotReadFile: "Não foi possível ler o arquivo",
+                toastNotValidJson: "O arquivo não é um JSON válido",
+                toastNotFlyLogBackup: "Esse arquivo não parece ser um backup do FlyLog",
+                toastImportedSummary: "Importado: {flights} voos, {drones} drones, {batteries} baterias",
+                toastFieldExists: "Já existe um campo chamado \"{label}\"",
+                toastFieldAdded: "Campo \"{label}\" adicionado",
+                confirmRemoveFieldMsg: "Remover o campo personalizado \"{label}\"? Seus valores registrados serão excluídos de todos os registros de voo. Esta ação não pode ser desfeita.",
+                toastFieldRemoved: "Campo \"{label}\" removido",
+                toastFieldRemovedGeneric: "Campo removido",
+                deleteLogTitle: "Excluir registro",
+                uavPlatformFallback: "Plataforma de drone",
+                editActionBtn: "Editar",
+                flightTimeLabel: "Tempo de voo",
+                requiredDefaultStatusTitle: "Status padrão obrigatório",
+                removeOptionTitle: "Remover opção",
+                noCustomFieldsYet: "Ainda não há campos personalizados",
+                removeFieldTitle: "Remover campo",
+                unnamedDroneFallback: "Drone sem nome",
+                unnamedBatteryFallback: "Bateria sem nome",
+                unknownAirframeFallback: "Aeronave desconhecida",
+                batteryStatusShortGood: "Boa",
+                batteryStatusShortWarning: "Atenção",
+                batteryStatusShortRetired: "Desativada"
+            }
+        };
+
+        function detectDefaultLang() {
+            try {
+                const saved = localStorage.getItem(LANG_KEY);
+                if (saved && translations[saved]) return saved;
+            } catch (err) {}
+            const nav = ((navigator.language || navigator.userLanguage || 'en') + '').toLowerCase();
+            if (nav.indexOf('uk') === 0) return 'uk';
+            if (nav.indexOf('pt') === 0) return 'pt-BR';
+            return 'en';
+        }
+
+        let currentLang = detectDefaultLang();
+
+        function interpolate(str, vars) {
+            if (!vars) return str;
+            return String(str).replace(/\{(\w+)\}/g, (_, k) =>
+                Object.prototype.hasOwnProperty.call(vars, k) ? vars[k] : ''
+            );
+        }
+
+        function t(key, vars) {
+            const dict = translations[currentLang] || translations.en;
+            const str = dict[key] !== undefined ? dict[key] : (translations.en[key] !== undefined ? translations.en[key] : key);
+            return interpolate(str, vars);
+        }
+
+        function pluralFormFor(n, lang) {
+            if (lang === 'uk') {
+                const mod10 = n % 10, mod100 = n % 100;
+                if (mod10 === 1 && mod100 !== 11) return 'one';
+                if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return 'few';
+                return 'many';
+            }
+            return n === 1 ? 'one' : 'other';
+        }
+
+        function tCount(base, n, vars) {
+            const mergedVars = vars ? Object.assign({}, vars) : {};
+            mergedVars.n = n;
+            const dict = translations[currentLang] || translations.en;
+            const form = pluralFormFor(n, currentLang);
+            const str = dict[`${base}_${form}`] || dict[`${base}_other`] ||
+                translations.en[`${base}_${form}`] || translations.en[`${base}_other`];
+            return interpolate(str, mergedVars);
+        }
+
+        function applyStaticTranslations() {
+            document.documentElement.setAttribute('lang', currentLang);
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                el.textContent = t(el.getAttribute('data-i18n'));
+            });
+            document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+                el.setAttribute('placeholder', t(el.getAttribute('data-i18n-placeholder')));
+            });
+            document.querySelectorAll('[data-i18n-aria-label]').forEach(el => {
+                el.setAttribute('aria-label', t(el.getAttribute('data-i18n-aria-label')));
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                el.setAttribute('title', t(el.getAttribute('data-i18n-title')));
+            });
+        }
+
+        // Applies a language switch across the whole app. renderAll() (called
+        // below) rebuilds every dynamic table/grid/chart/dropdown from `state`,
+        // which never changes here, and populateDropdowns()-style code always
+        // preserves the current selection — so this never touches or resets
+        // in-progress form input in an open modal.
+        function setLang(lang) {
+            if (!translations[lang]) lang = 'en';
+            currentLang = lang;
+            try { localStorage.setItem(LANG_KEY, lang); } catch (err) {}
+            applyStaticTranslations();
+            document.querySelectorAll('.lang-select').forEach(sel => { sel.value = currentLang; });
+            if (typeof renderAll === 'function') renderAll();
+            if (typeof renderStatusList === 'function' && !document.getElementById('modalManageStatuses').classList.contains('hidden')) renderStatusList();
+            if (typeof renderFieldsList === 'function' && !document.getElementById('modalManageFields').classList.contains('hidden')) renderFieldsList();
+        }
+
         // Application State
         let state = {
             flights: loadFromStorage('flylog_flights', INITIAL_FLIGHTS),
             drones: loadFromStorage('flylog_drones', INITIAL_DRONES),
             batteries: loadFromStorage('flylog_batteries', INITIAL_BATTERIES),
             droneStatuses: loadFromStorage('flylog_drone_statuses', ['Ready', 'Maintenance', 'In Inspection', 'Repairing', 'Retired']),
+            customFields: loadFromStorage('flylog_custom_fields', []),
             activeTab: 'dashboard'
         };
 
@@ -781,8 +1472,13 @@
         // Chart References
         let chartHoursInstance = null;
         let chartAirframeInstance = null;
+        // One Chart.js instance per numeric custom field, keyed by field id.
+        let customChartInstances = {};
 
         document.addEventListener('DOMContentLoaded', () => {
+            applyStaticTranslations();
+            document.querySelectorAll('.lang-select').forEach(sel => { sel.value = currentLang; });
+            document.getElementById('modalConfirmMessage').textContent = t('confirmDefaultMsg');
             initNavigation();
             setupModalDismissal();
             initCharts();
@@ -840,13 +1536,19 @@
                 localStorage.setItem('flylog_drones', JSON.stringify(state.drones));
                 localStorage.setItem('flylog_batteries', JSON.stringify(state.batteries));
                 localStorage.setItem('flylog_drone_statuses', JSON.stringify(state.droneStatuses));
+                localStorage.setItem('flylog_custom_fields', JSON.stringify(state.customFields));
             } catch (err) {
                 console.error('FlyLog: failed to save to local storage.', err);
-                showToast('Could not save changes locally — storage may be full', 'warning');
+                showToast(t('toastStorageFull'), 'warning');
             }
         }
 
         function initNavigation() {
+            // Language switcher
+            document.querySelectorAll('.lang-select').forEach(sel => {
+                sel.addEventListener('change', () => setLang(sel.value));
+            });
+
             // Tab switching via data-nav attributes
             document.querySelectorAll('[data-nav]').forEach(btn => {
                 btn.addEventListener('click', (e) => {
@@ -873,6 +1575,7 @@
             document.getElementById('btnAddDroneModal')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnInlineAddDrone')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnManageStatusesModal')?.addEventListener('click', () => openStatusesModal());
+            document.getElementById('btnManageFieldsModal')?.addEventListener('click', () => openFieldsModal());
 
             // Batteries view buttons
             document.getElementById('btnAddBatteryModal')?.addEventListener('click', () => openBatteryModal());
@@ -887,6 +1590,9 @@
 
             document.getElementById('closeStatusesModal')?.addEventListener('click', closeStatusesModal);
             document.getElementById('btnCloseStatuses')?.addEventListener('click', closeStatusesModal);
+
+            document.getElementById('closeFieldsModal')?.addEventListener('click', closeFieldsModal);
+            document.getElementById('btnCloseFields')?.addEventListener('click', closeFieldsModal);
 
             document.getElementById('closeBatteryModal')?.addEventListener('click', closeBatteryModal);
             document.getElementById('btnCancelBattery')?.addEventListener('click', closeBatteryModal);
@@ -1036,7 +1742,7 @@
             if (readinessElem) {
                 const total = state.drones.length || 1;
                 const pct = Math.round((readyCount / total) * 100);
-                readinessElem.textContent = `${pct}% Ready`;
+                readinessElem.textContent = t('readyStatusFormat', { pct });
             }
         }
 
@@ -1070,7 +1776,39 @@
             });
         }
 
+        // Renders one <td> per custom field for a flight row in the main
+        // Logbook table (numeric fields right-aligned/mono, text fields
+        // truncated like Notes). Missing/never-set values show as "-".
+        function renderCustomFieldCells(flight) {
+            return state.customFields.map(field => {
+                const v = flight.customValues ? flight.customValues[field.id] : undefined;
+                if (field.type === 'number') {
+                    const display = (typeof v === 'number' && !isNaN(v)) ? formatCustomNumber(v) : '-';
+                    return `<td class="py-3 px-3 font-mono text-teal-300">${display}</td>`;
+                }
+                const display = (typeof v === 'string' && v) ? escapeHtml(v) : '-';
+                return `<td class="py-3 px-3 text-slate-300 max-w-xs truncate">${display}</td>`;
+            }).join('');
+        }
+
+        // Rebuilds the Logbook table's header row so it always has exactly one
+        // column per current custom field, inserted before the Actions column.
+        function renderFlightsTableHeader() {
+            const row = document.getElementById('flightsTableHeaderRow');
+            if (!row) return;
+            row.querySelectorAll('.cf-header').forEach(el => el.remove());
+            const actionsTh = row.querySelector('.actions-header');
+            state.customFields.forEach(field => {
+                const th = document.createElement('th');
+                th.className = 'py-3 px-3 cf-header';
+                th.textContent = field.label;
+                if (actionsTh) row.insertBefore(th, actionsTh);
+                else row.appendChild(th);
+            });
+        }
+
         function renderFlightTables() {
+            renderFlightsTableHeader();
             const searchVal = (document.getElementById('filterSearch')?.value || '').toLowerCase();
             const droneVal = document.getElementById('filterDrone')?.value || '';
             const startDateVal = document.getElementById('filterStartDate')?.value || '';
@@ -1098,7 +1836,7 @@
             if (tbody) {
                 tbody.innerHTML = '';
                 if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-500 italic">No flight logs matched your search filters</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="${7 + state.customFields.length}" class="text-center py-8 text-slate-500 italic">${t('noFlightLogsMatch')}</td></tr>`;
                 } else {
                     filtered.forEach(f => {
                         const tr = document.createElement('tr');
@@ -1108,10 +1846,11 @@
                             <td class="py-3 px-3 font-mono text-slate-400">${escapeHtml(f.batteryName) || '-'}</td>
                             <td class="py-3 px-3 font-mono text-slate-300">${f.startTime ? escapeHtml(f.startTime.replace('T', ' ')) : '-'}</td>
                             <td class="py-3 px-3 font-mono text-slate-300">${f.endTime ? escapeHtml(f.endTime.replace('T', ' ')) : '-'}</td>
-                            <td class="py-3 px-3 font-mono text-emerald-400 font-bold">${f.duration ? f.duration + ' min' : '-'}</td>
+                            <td class="py-3 px-3 font-mono text-emerald-400 font-bold">${f.duration ? f.duration + ' ' + t('unitMin') : '-'}</td>
                             <td class="py-3 px-3 text-slate-300 max-w-xs truncate">${escapeHtml(f.notes) || '-'}</td>
+                            ${renderCustomFieldCells(f)}
                             <td class="py-3 px-3 text-right">
-                                <button onclick="confirmDeleteFlight('${f.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="Delete Log"><i class="fa-solid fa-trash-can"></i></button>
+                                <button onclick="confirmDeleteFlight('${f.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="${t('deleteLogTitle')}"><i class="fa-solid fa-trash-can"></i></button>
                             </td>
                         `;
                         tbody.appendChild(tr);
@@ -1125,7 +1864,7 @@
                 dashTable.innerHTML = '';
                 const recent = sortFlightsByDate(state.flights).slice(0, 5);
                 if (recent.length === 0) {
-                    dashTable.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 italic">No recent flights recorded</td></tr>`;
+                    dashTable.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-slate-500 italic">${t('noRecentFlights')}</td></tr>`;
                 } else {
                     recent.forEach(f => {
                         const tr = document.createElement('tr');
@@ -1135,7 +1874,7 @@
                             <td class="py-2.5 px-3 font-mono text-slate-400">${escapeHtml(f.batteryName) || '-'}</td>
                             <td class="py-2.5 px-3 font-mono text-slate-300">${f.startTime ? escapeHtml(f.startTime.replace('T', ' ')) : '-'}</td>
                             <td class="py-2.5 px-3 font-mono text-slate-300">${f.endTime ? escapeHtml(f.endTime.replace('T', ' ')) : '-'}</td>
-                            <td class="py-2.5 px-3 font-mono text-emerald-400 font-bold">${f.duration ? f.duration + ' min' : '-'}</td>
+                            <td class="py-2.5 px-3 font-mono text-emerald-400 font-bold">${f.duration ? f.duration + ' ' + t('unitMin') : '-'}</td>
                             <td class="py-2.5 px-3 text-slate-300 max-w-xs truncate">${escapeHtml(f.notes) || '-'}</td>
                         `;
                         dashTable.appendChild(tr);
@@ -1144,10 +1883,19 @@
             }
         }
 
+        // Formats a computed custom-field total for display: whole numbers show
+        // with no decimals, everything else is trimmed to at most 2 decimals.
+        function formatCustomNumber(n) {
+            if (!isFinite(n)) return '0';
+            return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString();
+        }
+
         function renderFleetGrid() {
             const fleetGrid = document.getElementById('fleetGrid');
             if (!fleetGrid) return;
             fleetGrid.innerHTML = '';
+
+            const numericFields = state.customFields.filter(f => f.type === 'number');
 
             state.drones.forEach(drone => {
                 const droneFlights = state.flights.filter(f => f.droneId === drone.id);
@@ -1155,7 +1903,7 @@
                 const totalHours = (drone.flightHours + (loggedMins / 60)).toFixed(1);
                 const flightCount = droneFlights.length;
 
-                const optionsHTML = state.droneStatuses.map(st => 
+                const optionsHTML = state.droneStatuses.map(st =>
                     `<option value="${escapeHtml(st)}" ${drone.status === st ? 'selected' : ''}>${escapeHtml(st)}</option>`
                 ).join('');
 
@@ -1163,13 +1911,26 @@
                                     drone.status === 'Maintenance' ? 'text-amber-400 bg-amber-950/60 border-amber-800/50' :
                                     'text-slate-400 bg-slate-900 border-slate-700';
 
+                const customStatsHTML = numericFields.map(field => {
+                    const total = droneFlights.reduce((acc, f) => {
+                        const v = f.customValues ? f.customValues[field.id] : undefined;
+                        return acc + (typeof v === 'number' && !isNaN(v) ? v : 0);
+                    }, 0);
+                    return `
+                        <div>
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('totalFieldLabel', { label: escapeHtml(field.label) })}</span>
+                            <span class="text-sm font-extrabold text-teal-400 font-mono">${formatCustomNumber(total)}</span>
+                        </div>
+                    `;
+                }).join('');
+
                 const card = document.createElement('div');
                 card.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4 hover:border-slate-700 transition';
                 card.innerHTML = `
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="font-bold text-white text-base">${escapeHtml(drone.name)}</h3>
-                            <p class="text-xs text-slate-400 font-mono">${escapeHtml(drone.model) || 'UAV Platform'}</p>
+                            <p class="text-xs text-slate-400 font-mono">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
                         </div>
                         <select onchange="updateDroneStatus('${drone.id}', this.value)" class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none ${statusColor}">
                             ${optionsHTML}
@@ -1178,26 +1939,34 @@
 
                     <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
                         <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Total Flight Time</span>
-                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} hrs</span>
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statTotalFlightTimeLabel')}</span>
+                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Logged Flights</span>
-                            <span class="text-sm font-extrabold text-white font-mono">${flightCount} flights</span>
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statLoggedFlightsLabel')}</span>
+                            <span class="text-sm font-extrabold text-white font-mono">${tCount('fleetFlightCount', flightCount)}</span>
                         </div>
+                        ${customStatsHTML}
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/60">
                         <button onclick="editDrone('${drone.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Edit
+                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
                         </button>
                         <button onclick="confirmDeleteDrone('${drone.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> Delete
+                            <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
                         </button>
                     </div>
                 `;
                 fleetGrid.appendChild(card);
             });
+        }
+
+        function batteryStatusShortLabel(status) {
+            if (status === 'Good') return t('batteryStatusShortGood');
+            if (status === 'Warning') return t('batteryStatusShortWarning');
+            if (status === 'Retired') return t('batteryStatusShortRetired');
+            return escapeHtml(status);
         }
 
         function renderBatteriesGrid() {
@@ -1220,7 +1989,7 @@
                     <div class="flex justify-between items-start">
                         <div>
                             <h3 class="font-bold text-white text-base">${escapeHtml(bat.name)}</h3>
-                            <span class="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold border ${healthClass}">${escapeHtml(bat.status)}</span>
+                            <span class="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold border ${healthClass}">${batteryStatusShortLabel(bat.status)}</span>
                         </div>
                         <div class="p-2 rounded-xl bg-amber-950/50 border border-amber-800/40 text-amber-400">
                             <i class="fa-solid fa-bolt text-base"></i>
@@ -1229,21 +1998,21 @@
 
                     <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
                         <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Charge Cycles</span>
-                            <span class="text-sm font-extrabold text-amber-400 font-mono">${bat.cycles} cycles</span>
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('chargeCyclesLabel')}</span>
+                            <span class="text-sm font-extrabold text-amber-400 font-mono">${tCount('batteryCyclesValue', bat.cycles)}</span>
                         </div>
                         <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">Flight Time</span>
-                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} hrs</span>
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('flightTimeLabel')}</span>
+                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
                         </div>
                     </div>
 
                     <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/60">
                         <button onclick="editBattery('${bat.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> Edit
+                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
                         </button>
                         <button onclick="confirmDeleteBattery('${bat.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> Delete
+                            <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
                         </button>
                     </div>
                 `;
@@ -1264,7 +2033,7 @@
 
             if (filterDroneSelect) {
                 const currVal = filterDroneSelect.value;
-                filterDroneSelect.innerHTML = `<option value="">All Airframes</option>` + state.drones.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+                filterDroneSelect.innerHTML = `<option value="">${t('allAirframesOption')}</option>` + state.drones.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
                 if (currVal) filterDroneSelect.value = currVal;
             }
 
@@ -1272,7 +2041,7 @@
             const flightBatterySelect = document.getElementById('flightBattery');
             if (flightBatterySelect) {
                 const currVal = flightBatterySelect.value;
-                flightBatterySelect.innerHTML = `<option value="">-- None / Standard --</option>` + state.batteries.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+                flightBatterySelect.innerHTML = `<option value="">${t('noneStandardOption')}</option>` + state.batteries.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
                 if (currVal) flightBatterySelect.value = currVal;
             }
 
@@ -1298,7 +2067,7 @@
                 const battery = batteryId ? state.batteries.find(b => b.id === batteryId) : null;
 
                 if (!drone) {
-                    showToast('Please select an airframe', 'warning');
+                    showToast(t('toastSelectAirframe'), 'warning');
                     return;
                 }
 
@@ -1311,12 +2080,13 @@
                     startTime,
                     endTime,
                     duration,
-                    notes
+                    notes,
+                    customValues: collectCustomFieldValues()
                 });
 
                 closeLogFlightModal();
                 renderAll();
-                showToast('Flight logged successfully!', 'success');
+                showToast(t('toastFlightLogged'), 'success');
             });
 
             // Submit Drone Form
@@ -1350,7 +2120,7 @@
 
                 closeDroneModal();
                 renderAll();
-                showToast(editId ? 'Drone updated!' : 'New drone added!', 'success');
+                showToast(editId ? t('toastDroneUpdated') : t('toastDroneAdded'), 'success');
             });
 
             // Submit Battery Form
@@ -1384,7 +2154,7 @@
 
                 closeBatteryModal();
                 renderAll();
-                showToast(editId ? 'Battery updated!' : 'New battery pack added!', 'success');
+                showToast(editId ? t('toastBatteryUpdated') : t('toastBatteryAdded'), 'success');
             });
 
             // Add Custom Status Form
@@ -1397,8 +2167,29 @@
                     input.value = '';
                     renderAll();
                     renderStatusList();
-                    showToast(`Status "${val}" added`, 'success');
+                    showToast(t('toastStatusAdded', { status: val }), 'success');
                 }
+            });
+
+            // Add Custom Field Form
+            document.getElementById('formAddField').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const labelInput = document.getElementById('newFieldLabel');
+                const typeSelect = document.getElementById('newFieldType');
+                const label = labelInput.value.trim();
+                const type = typeSelect.value === 'number' ? 'number' : 'text';
+                if (!label) return;
+                const exists = state.customFields.some(f => f.label.toLowerCase() === label.toLowerCase());
+                if (exists) {
+                    showToast(t('toastFieldExists', { label }), 'warning');
+                    return;
+                }
+                state.customFields.push({ id: 'cf-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7), label, type });
+                labelInput.value = '';
+                typeSelect.value = 'text';
+                renderFieldsList();
+                renderAll();
+                showToast(t('toastFieldAdded', { label }), 'success');
             });
 
             // Table filter event listeners
@@ -1441,7 +2232,39 @@
         function openLogFlightModal() {
             document.getElementById('formLogFlight').reset();
             populateDropdowns();
+            renderCustomFieldInputs();
             document.getElementById('modalLogFlight').classList.remove('hidden');
+        }
+
+        // Builds one input per custom field inside the Log Flight modal. Called
+        // fresh every time the modal opens so it always reflects the current
+        // field list (fields can only be added/removed while this modal is closed).
+        function renderCustomFieldInputs() {
+            const container = document.getElementById('customFieldsFormContainer');
+            if (!container) return;
+            container.innerHTML = state.customFields.map(field => `
+                <div>
+                    <label for="cf-${field.id}" class="block text-slate-400 mb-1 font-medium">${escapeHtml(field.label)}</label>
+                    <input type="${field.type === 'number' ? 'number' : 'text'}" ${field.type === 'number' ? 'step="any"' : ''} id="cf-${field.id}" class="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500${field.type === 'number' ? ' font-mono' : ''}">
+                </div>
+            `).join('');
+        }
+
+        // Reads the current values out of the dynamic custom-field inputs,
+        // keyed by field id. Numeric fields default to 0 when left blank,
+        // matching how Duration already behaves.
+        function collectCustomFieldValues() {
+            const values = {};
+            state.customFields.forEach(field => {
+                const el = document.getElementById(`cf-${field.id}`);
+                if (!el) return;
+                if (field.type === 'number') {
+                    values[field.id] = el.value === '' ? 0 : (parseFloat(el.value) || 0);
+                } else {
+                    values[field.id] = el.value;
+                }
+            });
+            return values;
         }
 
         function closeLogFlightModal() {
@@ -1452,14 +2275,14 @@
             document.getElementById('formDrone').reset();
             populateDropdowns();
             if (drone) {
-                document.getElementById('modalDroneTitle').textContent = 'Edit Drone';
+                document.getElementById('modalDroneTitle').textContent = t('editDroneTitle');
                 document.getElementById('droneEditId').value = drone.id;
                 document.getElementById('droneName').value = drone.name;
                 document.getElementById('droneModel').value = drone.model || '';
                 document.getElementById('droneHours').value = drone.flightHours || 0;
                 document.getElementById('droneStatus').value = drone.status || 'Ready';
             } else {
-                document.getElementById('modalDroneTitle').textContent = 'Add New Drone';
+                document.getElementById('modalDroneTitle').textContent = t('addNewDroneTitle');
                 document.getElementById('droneEditId').value = '';
             }
             document.getElementById('modalDrone').classList.remove('hidden');
@@ -1478,14 +2301,14 @@
             const drone = state.drones.find(d => d.id === id);
             if (!drone) return;
             const flightCount = state.flights.filter(f => f.droneId === id).length;
-            const extra = flightCount > 0 ? ` Its ${flightCount} logged flight${flightCount === 1 ? '' : 's'} will be kept in the logbook.` : '';
-            showConfirm(`Delete "${drone.name}"?${extra}`, () => deleteDrone(id));
+            const extra = flightCount > 0 ? tCount('keptInLogbookNote', flightCount) : '';
+            showConfirm(t('deleteDroneConfirmBase', { name: drone.name }) + extra, () => deleteDrone(id));
         }
 
         function deleteDrone(id) {
             state.drones = state.drones.filter(d => d.id !== id);
             renderAll();
-            showToast('Drone deleted', 'info');
+            showToast(t('toastDroneDeleted'), 'info');
         }
 
         function updateDroneStatus(id, newStatus) {
@@ -1493,21 +2316,21 @@
             if (drone) {
                 drone.status = newStatus;
                 renderAll();
-                showToast(`${drone.name} status: ${newStatus}`, 'info');
+                showToast(t('toastDroneStatusChanged', { name: drone.name, status: newStatus }), 'info');
             }
         }
 
         function openBatteryModal(battery = null) {
             document.getElementById('formBattery').reset();
             if (battery) {
-                document.getElementById('modalBatteryTitle').textContent = 'Edit Battery Pack';
+                document.getElementById('modalBatteryTitle').textContent = t('editBatteryTitle');
                 document.getElementById('batteryEditId').value = battery.id;
                 document.getElementById('batteryName').value = battery.name;
                 document.getElementById('batteryCycles').value = battery.cycles || 0;
                 document.getElementById('batteryHours').value = battery.flightHours || 0;
                 document.getElementById('batteryStatus').value = battery.status || 'Good';
             } else {
-                document.getElementById('modalBatteryTitle').textContent = 'Add New Battery';
+                document.getElementById('modalBatteryTitle').textContent = t('addNewBatteryTitle');
                 document.getElementById('batteryEditId').value = '';
             }
             document.getElementById('modalBattery').classList.remove('hidden');
@@ -1526,14 +2349,14 @@
             const bat = state.batteries.find(b => b.id === id);
             if (!bat) return;
             const flightCount = state.flights.filter(f => f.batteryId === id).length;
-            const extra = flightCount > 0 ? ` Its ${flightCount} logged flight${flightCount === 1 ? '' : 's'} will be kept in the logbook.` : '';
-            showConfirm(`Delete "${bat.name}"?${extra}`, () => deleteBattery(id));
+            const extra = flightCount > 0 ? tCount('keptInLogbookNote', flightCount) : '';
+            showConfirm(t('deleteDroneConfirmBase', { name: bat.name }) + extra, () => deleteBattery(id));
         }
 
         function deleteBattery(id) {
             state.batteries = state.batteries.filter(b => b.id !== id);
             renderAll();
-            showToast('Battery deleted', 'info');
+            showToast(t('toastBatteryDeleted'), 'info');
         }
 
         function openStatusesModal() {
@@ -1555,8 +2378,8 @@
                 const row = document.createElement('div');
                 row.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800';
                 row.innerHTML = `
-                    <span class="font-medium text-slate-200">${escapeHtml(st)}${isProtected ? ' <span class=\'text-[10px] text-slate-500\'>(default)</span>' : ''}</span>
-                    <button type="button" onclick="removeStatusOption(${idx})" ${isProtected ? 'disabled title="Required default status"' : 'title="Remove option"'} class="text-rose-400 hover:text-rose-300 disabled:text-slate-700 disabled:cursor-not-allowed p-1 text-xs transition">
+                    <span class="font-medium text-slate-200">${escapeHtml(st)}${isProtected ? ` <span class='text-[10px] text-slate-500'>${t('defaultStatusSuffix')}</span>` : ''}</span>
+                    <button type="button" onclick="removeStatusOption(${idx})" ${isProtected ? `disabled title="${t('requiredDefaultStatusTitle')}"` : `title="${t('removeOptionTitle')}"`} class="text-rose-400 hover:text-rose-300 disabled:text-slate-700 disabled:cursor-not-allowed p-1 text-xs transition">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
@@ -1566,33 +2389,88 @@
 
         function removeStatusOption(index) {
             if (state.droneStatuses.length <= 1) {
-                showToast('At least one status option is required', 'warning');
+                showToast(t('toastMinStatusRequired'), 'warning');
                 return;
             }
             const target = state.droneStatuses[index];
             if (target === 'Ready') {
-                showToast('The "Ready" status is required and can\'t be removed', 'warning');
+                showToast(t('toastReadyStatusProtected'), 'warning');
                 return;
             }
             const inUse = state.drones.some(d => d.status === target);
             if (inUse) {
-                showToast(`Reassign drones using "${target}" before removing it`, 'warning');
+                showToast(t('toastReassignBeforeRemove', { status: target }), 'warning');
                 return;
             }
             const removed = state.droneStatuses.splice(index, 1)[0];
             renderAll();
             renderStatusList();
-            showToast(`Status "${removed}" removed`, 'info');
+            showToast(t('toastStatusRemoved', { status: removed }), 'info');
+        }
+
+        function openFieldsModal() {
+            renderFieldsList();
+            document.getElementById('modalManageFields').classList.remove('hidden');
+        }
+
+        function closeFieldsModal() {
+            document.getElementById('modalManageFields').classList.add('hidden');
+        }
+
+        function renderFieldsList() {
+            const container = document.getElementById('fieldsListContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (state.customFields.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 italic text-center py-2">${t('noCustomFieldsYet')}</p>`;
+                return;
+            }
+
+            state.customFields.forEach(field => {
+                const row = document.createElement('div');
+                row.className = 'flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800';
+                const typeBadgeClass = field.type === 'number'
+                    ? 'bg-cyan-950/60 text-cyan-300 border-cyan-800/50'
+                    : 'bg-slate-800 text-slate-400 border-slate-700';
+                row.innerHTML = `
+                    <div class="flex items-center gap-2 min-w-0">
+                        <span class="font-medium text-slate-200 truncate">${escapeHtml(field.label)}</span>
+                        <span class="text-[10px] uppercase px-1.5 py-0.5 rounded-full font-semibold border shrink-0 ${typeBadgeClass}">${field.type === 'number' ? t('fieldTypeNumeric') : t('fieldTypeText')}</span>
+                    </div>
+                    <button type="button" onclick="confirmRemoveCustomField('${field.id}')" title="${t('removeFieldTitle')}" class="text-rose-400 hover:text-rose-300 p-1 text-xs transition shrink-0">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function confirmRemoveCustomField(id) {
+            const field = state.customFields.find(f => f.id === id);
+            if (!field) return;
+            showConfirm(t('confirmRemoveFieldMsg', { label: field.label }), () => removeCustomField(id));
+        }
+
+        function removeCustomField(id) {
+            const field = state.customFields.find(f => f.id === id);
+            state.customFields = state.customFields.filter(f => f.id !== id);
+            state.flights.forEach(f => {
+                if (f.customValues) delete f.customValues[id];
+            });
+            renderFieldsList();
+            renderAll();
+            showToast(field ? t('toastFieldRemoved', { label: field.label }) : t('toastFieldRemovedGeneric'), 'info');
         }
 
         function confirmDeleteFlight(id) {
-            showConfirm('Delete this flight log? This cannot be undone.', () => deleteFlight(id));
+            showConfirm(t('confirmDeleteFlightMsg'), () => deleteFlight(id));
         }
 
         function deleteFlight(id) {
             state.flights = state.flights.filter(f => f.id !== id);
             renderAll();
-            showToast('Flight log deleted', 'info');
+            showToast(t('toastFlightDeleted'), 'info');
         }
 
         // Build the last 6 months' total logged flight hours from real flight
@@ -1615,6 +2493,106 @@
                 labels: buckets.map(b => b.label),
                 data: buckets.map(b => Math.round((b.mins / 60) * 10) / 10)
             };
+        }
+
+        // Same monthly-bucket approach as computeMonthlyHours, but summing one
+        // numeric custom field's values (across all aircraft) instead of duration.
+        function computeMonthlyCustomFieldTotal(fieldId) {
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const now = new Date();
+            const buckets = [];
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: monthNames[d.getMonth()], total: 0 });
+            }
+            state.flights.forEach(f => {
+                if (!f.startTime) return;
+                const key = f.startTime.substring(0, 7);
+                const bucket = buckets.find(b => b.key === key);
+                if (!bucket) return;
+                const v = f.customValues ? f.customValues[fieldId] : undefined;
+                if (typeof v === 'number' && !isNaN(v)) bucket.total += v;
+            });
+            return {
+                labels: buckets.map(b => b.label),
+                data: buckets.map(b => Math.round(b.total * 100) / 100)
+            };
+        }
+
+        // Creates or updates one trend chart per numeric custom field (mirroring
+        // the Flight Hours Trend chart), removing charts for fields that were
+        // deleted. Idempotent, so it's safe to call on every render.
+        function renderCustomFieldCharts() {
+            const container = document.getElementById('customFieldChartsContainer');
+            if (!container || typeof Chart === 'undefined') return;
+
+            const numericFields = state.customFields.filter(f => f.type === 'number');
+            const currentIds = new Set(numericFields.map(f => f.id));
+
+            Object.keys(customChartInstances).forEach(id => {
+                if (currentIds.has(id)) return;
+                customChartInstances[id].destroy();
+                delete customChartInstances[id];
+                document.getElementById(`cfChartWrap-${id}`)?.remove();
+            });
+
+            numericFields.forEach(field => {
+                const trend = computeMonthlyCustomFieldTotal(field.id);
+                let canvas = document.getElementById(`cfChart-${field.id}`);
+                let labelEl = document.getElementById(`cfChartLabel-${field.id}`);
+
+                if (!canvas) {
+                    const wrap = document.createElement('div');
+                    wrap.id = `cfChartWrap-${field.id}`;
+                    wrap.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4';
+                    wrap.innerHTML = `
+                        <div class="flex items-center justify-between">
+                            <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-teal-400"></i>
+                                <span id="cfChartLabel-${field.id}"></span>
+                            </h3>
+                            <span class="text-xs text-slate-400">Monthly Aggregates</span>
+                        </div>
+                        <div class="h-64"><canvas id="cfChart-${field.id}"></canvas></div>
+                    `;
+                    container.appendChild(wrap);
+                    canvas = document.getElementById(`cfChart-${field.id}`);
+                    labelEl = document.getElementById(`cfChartLabel-${field.id}`);
+                }
+
+                if (labelEl) labelEl.textContent = t('customFieldChartTitle', { label: field.label });
+
+                if (customChartInstances[field.id]) {
+                    customChartInstances[field.id].data.labels = trend.labels;
+                    customChartInstances[field.id].data.datasets[0].data = trend.data;
+                    customChartInstances[field.id].data.datasets[0].label = field.label;
+                    customChartInstances[field.id].update();
+                } else {
+                    customChartInstances[field.id] = new Chart(canvas.getContext('2d'), {
+                        type: 'line',
+                        data: {
+                            labels: trend.labels,
+                            datasets: [{
+                                label: field.label,
+                                data: trend.data,
+                                borderColor: '#2dd4bf',
+                                backgroundColor: 'rgba(45, 212, 191, 0.1)',
+                                fill: true,
+                                tension: 0.4
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: { legend: { display: false } },
+                            scales: {
+                                x: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } },
+                                y: { grid: { color: 'rgba(255, 255, 255, 0.05)' }, ticks: { color: '#94a3b8' } }
+                            }
+                        }
+                    });
+                }
+            });
         }
 
         function initCharts() {
@@ -1678,6 +2656,8 @@
             } catch (err) {
                 console.error('FlyLog: chart initialization failed, continuing without charts.', err);
             }
+
+            renderCustomFieldCharts();
         }
 
         function updateCharts() {
@@ -1698,6 +2678,8 @@
             } catch (err) {
                 console.error('FlyLog: chart update failed.', err);
             }
+
+            renderCustomFieldCharts();
         }
 
         // CSV Exporter
@@ -1711,20 +2693,31 @@
 
         function exportToCSV() {
             if (state.flights.length === 0) {
-                showToast('No flight logs to export', 'warning');
+                showToast(t('toastNoFlightsExport'), 'warning');
                 return;
             }
 
-            let csv = 'Airframe,Battery,Start Time,End Time,Duration (Min),Notes\n';
+            const headerCols = ['Airframe', 'Battery', 'Start Time', 'End Time', 'Duration (Min)', 'Notes']
+                .concat(state.customFields.map(f => f.label));
+            let csv = headerCols.map(csvSafeCell).join(',') + '\n';
             sortFlightsByDate(state.flights).forEach(f => {
-                csv += [
+                const row = [
                     csvSafeCell(f.droneName),
                     csvSafeCell(f.batteryName || ''),
                     csvSafeCell(f.startTime || ''),
                     csvSafeCell(f.endTime || ''),
                     f.duration || 0,
                     csvSafeCell(f.notes || '')
-                ].join(',') + '\n';
+                ];
+                state.customFields.forEach(field => {
+                    const v = f.customValues ? f.customValues[field.id] : undefined;
+                    if (field.type === 'number') {
+                        row.push(typeof v === 'number' && !isNaN(v) ? v : 0);
+                    } else {
+                        row.push(csvSafeCell(v || ''));
+                    }
+                });
+                csv += row.join(',') + '\n';
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1736,7 +2729,7 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showToast('CSV export downloaded', 'success');
+            showToast(t('toastCsvExported'), 'success');
         }
 
         // --- Full JSON backup: export/import everything (flights, drones,
@@ -1750,7 +2743,8 @@
                 flights: state.flights,
                 drones: state.drones,
                 batteries: state.batteries,
-                droneStatuses: state.droneStatuses
+                droneStatuses: state.droneStatuses,
+                customFields: state.customFields
             };
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const url = URL.createObjectURL(blob);
@@ -1761,23 +2755,23 @@
             link.click();
             document.body.removeChild(link);
             URL.revokeObjectURL(url);
-            showToast('Backup downloaded', 'success');
+            showToast(t('toastBackupDownloaded'), 'success');
         }
 
         function importBackupFile(file) {
             const reader = new FileReader();
-            reader.onerror = () => showToast('Could not read that file', 'warning');
+            reader.onerror = () => showToast(t('toastCouldNotReadFile'), 'warning');
             reader.onload = () => {
                 let data;
                 try {
                     data = JSON.parse(reader.result);
                 } catch (err) {
-                    showToast('That file is not valid JSON', 'warning');
+                    showToast(t('toastNotValidJson'), 'warning');
                     return;
                 }
                 if (!data || typeof data !== 'object' ||
                     !Array.isArray(data.drones) || !Array.isArray(data.batteries) || !Array.isArray(data.flights)) {
-                    showToast('That file doesn\'t look like a FlyLog backup', 'warning');
+                    showToast(t('toastNotFlyLogBackup'), 'warning');
                     return;
                 }
 
@@ -1789,7 +2783,7 @@
                     droneIdMap[d.id] = newId;
                     state.drones.push({
                         id: newId,
-                        name: d.name || 'Unnamed Drone',
+                        name: d.name || t('unnamedDroneFallback'),
                         model: d.model || '',
                         flightHours: Number(d.flightHours) || 0,
                         status: (typeof d.status === 'string' && d.status) || state.droneStatuses[0] || 'Ready'
@@ -1802,7 +2796,7 @@
                     batteryIdMap[b.id] = newId;
                     state.batteries.push({
                         id: newId,
-                        name: b.name || 'Unnamed Battery',
+                        name: b.name || t('unnamedBatteryFallback'),
                         cycles: Number(b.cycles) || 0,
                         flightHours: Number(b.flightHours) || 0,
                         status: (typeof b.status === 'string' && b.status) || 'Good'
@@ -1815,26 +2809,65 @@
                     }
                 });
 
+                // Merge custom field definitions: dedupe by (label case-insensitive +
+                // type) against what's already here, reusing the existing field's id
+                // so imported values land in the same column instead of a duplicate
+                // one. A label collision with a different type gets a disambiguating
+                // suffix rather than silently mixing text and numeric values.
+                const fieldIdMap = {};
+                (data.customFields || []).forEach(cf => {
+                    if (!cf || typeof cf !== 'object') return;
+                    const label = typeof cf.label === 'string' ? cf.label.trim() : '';
+                    const type = cf.type === 'number' ? 'number' : 'text';
+                    if (!label) return;
+                    let existing = state.customFields.find(f => f.label.toLowerCase() === label.toLowerCase() && f.type === type);
+                    if (!existing) {
+                        const sameLabelOtherType = state.customFields.some(f => f.label.toLowerCase() === label.toLowerCase());
+                        existing = {
+                            id: 'cf-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+                            label: sameLabelOtherType ? `${label} (${type === 'number' ? 'Numeric' : 'Text'})` : label,
+                            type
+                        };
+                        state.customFields.push(existing);
+                    }
+                    fieldIdMap[cf.id] = existing.id;
+                });
+
                 let importedFlights = 0;
                 (data.flights || []).forEach(f => {
                     const newDroneId = droneIdMap[f.droneId] || null;
                     const newBatteryId = f.batteryId ? (batteryIdMap[f.batteryId] || null) : null;
+                    const customValues = {};
+                    if (f.customValues && typeof f.customValues === 'object') {
+                        Object.keys(f.customValues).forEach(oldFieldId => {
+                            const newFieldId = fieldIdMap[oldFieldId];
+                            if (!newFieldId) return;
+                            const targetField = state.customFields.find(cf => cf.id === newFieldId);
+                            const rawVal = f.customValues[oldFieldId];
+                            if (targetField && targetField.type === 'number') {
+                                customValues[newFieldId] = typeof rawVal === 'number' ? rawVal : (parseFloat(rawVal) || 0);
+                            } else {
+                                customValues[newFieldId] = typeof rawVal === 'string' ? rawVal : (rawVal != null ? String(rawVal) : '');
+                            }
+                        });
+                    }
                     state.flights.push({
                         id: 'flt-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
                         droneId: newDroneId,
-                        droneName: f.droneName || f.drone || 'Unknown Airframe',
+                        droneName: f.droneName || f.drone || t('unknownAirframeFallback'),
                         batteryId: newBatteryId,
                         batteryName: f.batteryName || f.battery || '',
                         startTime: f.startTime || '',
                         endTime: f.endTime || '',
                         duration: Number(f.duration) || 0,
-                        notes: typeof f.notes === 'string' ? f.notes : ''
+                        notes: typeof f.notes === 'string' ? f.notes : '',
+                        customValues
                     });
                     importedFlights++;
                 });
 
                 renderAll();
-                showToast(`Imported ${importedFlights} flights, ${data.drones.length} drones, ${data.batteries.length} batteries`, 'success');
+                showToast(t('toastImportedSummary', { flights: importedFlights, drones: data.drones.length, batteries: data.batteries.length }), 'success');
             };
             reader.readAsText(file);
         }
