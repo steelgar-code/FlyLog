@@ -1660,31 +1660,56 @@
             overlay.classList.add('hidden');
         }
 
+        // Tracks which single field (start/end/duration), if any, currently
+        // holds a value the calculator derived rather than one the user
+        // typed. A derived value must never be fed back in as an anchor for
+        // the next calculation - otherwise editing one field while a second
+        // gets auto-filled creates a feedback loop that corrupts the field
+        // the user never touched (e.g. setting Flight End, then typing
+        // Duration digit by digit: each keystroke derives Start from End,
+        // but the next keystroke would treat that derived Start as real and
+        // use it to recompute - and overwrite - the End the user just set).
+        let flightTimeDerivedField = null;
+
         function setupAutoCalculator() {
             const startInput = document.getElementById('flightStartTime');
             const endInput = document.getElementById('flightEndTime');
             const durationInput = document.getElementById('flightDuration');
 
+            function fieldValue(field) {
+                if (field === flightTimeDerivedField) return null;
+                const input = field === 'start' ? startInput : field === 'end' ? endInput : durationInput;
+                if (!input.value) return null;
+                return field === 'duration' ? parseFloat(input.value) : new Date(input.value);
+            }
+
             function calculateMissingField(lastChanged) {
-                const startTimeVal = startInput.value ? new Date(startInput.value) : null;
-                const endTimeVal = endInput.value ? new Date(endInput.value) : null;
-                const durationVal = durationInput.value ? parseFloat(durationInput.value) : null;
+                // Whatever the user just typed into is real now, not a stale derived value.
+                if (lastChanged === flightTimeDerivedField) flightTimeDerivedField = null;
+
+                const startTimeVal = fieldValue('start');
+                const endTimeVal = fieldValue('end');
+                const durationVal = fieldValue('duration');
 
                 if (lastChanged === 'start' || lastChanged === 'end') {
                     if (startTimeVal && endTimeVal && endTimeVal > startTimeVal) {
                         const diffMins = (endTimeVal - startTimeVal) / (1000 * 60);
                         durationInput.value = diffMins.toFixed(1);
+                        flightTimeDerivedField = 'duration';
                     } else if (startTimeVal && durationVal && durationVal > 0 && lastChanged === 'start') {
                         const derivedEnd = new Date(startTimeVal.getTime() + durationVal * 60000);
                         endInput.value = formatDateTimeLocal(derivedEnd);
+                        flightTimeDerivedField = 'end';
                     }
                 } else if (lastChanged === 'duration') {
                     if (startTimeVal && durationVal && durationVal > 0) {
                         const derivedEnd = new Date(startTimeVal.getTime() + durationVal * 60000);
                         endInput.value = formatDateTimeLocal(derivedEnd);
+                        flightTimeDerivedField = 'end';
                     } else if (endTimeVal && durationVal && durationVal > 0) {
                         const derivedStart = new Date(endTimeVal.getTime() - durationVal * 60000);
                         startInput.value = formatDateTimeLocal(derivedStart);
+                        flightTimeDerivedField = 'start';
                     }
                 }
             }
@@ -2223,6 +2248,7 @@
 
         function openLogFlightModal() {
             document.getElementById('formLogFlight').reset();
+            flightTimeDerivedField = null;
             populateDropdowns();
             renderCustomFieldInputs();
             document.getElementById('modalLogFlight').classList.remove('hidden');
