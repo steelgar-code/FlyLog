@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FlyLog Pro - UAV Flight & Fleet Operations</title>
+    <title>FlyLog - UAV Flight & Fleet Operations</title>
     <meta name="description" content="Offline-first flight log and fleet manager for drone pilots, with custom fields, maintenance tracking, and multi-language support.">
     <meta name="theme-color" content="#0d9488">
     <!-- PWA manifest + icons -->
@@ -204,6 +204,14 @@
                         <span id="sidebarReadiness" class="text-cyan-400">100% Ready</span>
                     </div>
                 </div>
+            </div>
+
+            <!-- Crosslinks to sibling apps -->
+            <div class="px-4 pb-4 pt-1 flex items-center justify-center gap-2 text-[11px] text-slate-500">
+                <span data-i18n="moreAppsLabel">More apps:</span>
+                <a href="https://steelgar-code.github.io/FlySend/" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-cyan-300 transition font-medium">FlySend</a>
+                <span class="text-slate-700">&middot;</span>
+                <a href="https://steelgar-code.github.io/FlyStock/" target="_blank" rel="noopener noreferrer" class="text-cyan-400 hover:text-cyan-300 transition font-medium">FlyStock</a>
             </div>
         </aside>
 
@@ -425,15 +433,15 @@
             <section id="viewFleet" class="view-panel space-y-6 hidden">
                 <div class="flex items-center justify-between">
                     <div>
-                        <h2 class="text-xl font-bold text-white" data-i18n="fleetMgmtTitle">Airframe Fleet Management</h2>
+                        <h2 class="text-xl font-bold text-white" data-i18n="fleetMgmtTitle">Fleet</h2>
                         <p class="text-xs text-slate-400" data-i18n="fleetMgmtSubtitle">Track drone operational readiness, frame hours, and flight counts</p>
                     </div>
                     <div class="flex items-center gap-2">
                         <button id="btnManageStatusesModal" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
-                            <i class="fa-solid fa-sliders text-cyan-400"></i> <span data-i18n="editStatusListBtn">Edit Status List</span>
+                            <i class="fa-solid fa-sliders text-cyan-400"></i> <span data-i18n="editStatusListBtn">Statuses</span>
                         </button>
                         <button id="btnAddDroneModal" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
-                            <i class="fa-solid fa-plus"></i> <span data-i18n="addDroneBtn">Add Drone</span>
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="addDroneBtn">Drone</span>
                         </button>
                     </div>
                 </div>
@@ -451,7 +459,7 @@
                         <p class="text-xs text-slate-400" data-i18n="batteryInventorySubtitle">Track charge cycles, total flight duration, and health status</p>
                     </div>
                     <button id="btnAddBatteryModal" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
-                        <i class="fa-solid fa-plus"></i> <span data-i18n="addBatteryBtn">Add Battery Pack</span>
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="addBatteryBtn">Battery</span>
                     </button>
                 </div>
 
@@ -598,6 +606,8 @@
                 <p class="text-slate-400" data-i18n="editStatusOptionsDesc">Add custom operational statuses or remove existing ones from your fleet dropdowns.</p>
 
                 <form id="formAddStatus" class="flex gap-2">
+                    <label for="newStatusColor" class="sr-only" data-i18n="newStatusColorSr">New status color</label>
+                    <input type="color" id="newStatusColor" value="#94a3b8" title="Status color" data-i18n-title="statusColorTitle" class="w-9 h-9 shrink-0 rounded-lg border border-slate-800 bg-slate-950 p-0.5 cursor-pointer">
                     <label for="newStatusInput" class="sr-only" data-i18n="newStatusNameSr">New status name</label>
                     <input type="text" id="newStatusInput" placeholder="e.g. In Testing / Standby" data-i18n-placeholder="newStatusPlaceholder" required class="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500 text-xs">
                     <button type="submit" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition" data-i18n="addBtn">Add</button>
@@ -831,6 +841,7 @@
                 databaseSyncLabel: "Database Sync",
                 localStorageLabel: "Local Storage",
                 airframeReadinessLabel: "Airframe Readiness",
+                moreAppsLabel: "More apps:",
                 statTotalFlightTimeLabel: "Total Flight Time",
                 cumulativeLabel: "Cumulative",
                 viewLogbookLink: "View Logbook",
@@ -870,13 +881,13 @@
                 endDateTitle: "End Date",
                 resetBtn: "Reset",
                 colActions: "Actions",
-                fleetMgmtTitle: "Airframe Fleet Management",
+                fleetMgmtTitle: "Fleet",
                 fleetMgmtSubtitle: "Track drone operational readiness, frame hours, and flight counts",
-                editStatusListBtn: "Edit Status List",
-                addDroneBtn: "Add Drone",
+                editStatusListBtn: "Statuses",
+                addDroneBtn: "Drone",
                 batteryInventoryTitle: "Battery Inventory",
                 batteryInventorySubtitle: "Track charge cycles, total flight duration, and health status",
-                addBatteryBtn: "Add Battery Pack",
+                addBatteryBtn: "Battery",
                 logFlightModalTitle: "Log UAV Flight",
                 closeAriaLabel: "Close",
                 addNewDroneTitle: "Add New Drone",
@@ -901,6 +912,8 @@
                 editStatusOptionsTitle: "Edit Drone Status Options",
                 editStatusOptionsDesc: "Add custom operational statuses or remove existing ones from your fleet dropdowns.",
                 newStatusNameSr: "New status name",
+                newStatusColorSr: "New status color",
+                statusColorTitle: "Status color",
                 newStatusPlaceholder: "e.g. In Testing / Standby",
                 addBtn: "Add",
                 doneBtn: "Done",
@@ -1006,6 +1019,7 @@
                 databaseSyncLabel: "Синхронізація БД",
                 localStorageLabel: "Локальне сховище",
                 airframeReadinessLabel: "Готовність флоту",
+                moreAppsLabel: "Інші застосунки:",
                 statTotalFlightTimeLabel: "Загальний час польоту",
                 cumulativeLabel: "Сукупно",
                 viewLogbookLink: "Переглянути журнал",
@@ -1045,13 +1059,13 @@
                 endDateTitle: "Дата закінчення",
                 resetBtn: "Скинути",
                 colActions: "Дії",
-                fleetMgmtTitle: "Управління флотом дронів",
+                fleetMgmtTitle: "Флот",
                 fleetMgmtSubtitle: "Відстежуйте готовність дронів, налітані години та кількість польотів",
-                editStatusListBtn: "Редагувати статуси",
-                addDroneBtn: "Додати дрон",
+                editStatusListBtn: "Статуси",
+                addDroneBtn: "Дрон",
                 batteryInventoryTitle: "Облік батарей",
                 batteryInventorySubtitle: "Відстежуйте цикли заряду, загальний час польоту та стан справності",
-                addBatteryBtn: "Додати блок батареї",
+                addBatteryBtn: "Батарея",
                 logFlightModalTitle: "Записати політ БПЛА",
                 closeAriaLabel: "Закрити",
                 addNewDroneTitle: "Додати новий дрон",
@@ -1076,6 +1090,8 @@
                 editStatusOptionsTitle: "Редагувати варіанти статусів дрона",
                 editStatusOptionsDesc: "Додайте власні робочі статуси або видаліть наявні зі спадних списків флоту.",
                 newStatusNameSr: "Назва нового статусу",
+                newStatusColorSr: "Колір нового статусу",
+                statusColorTitle: "Колір статусу",
                 newStatusPlaceholder: "напр., На тестуванні / Резерв",
                 addBtn: "Додати",
                 doneBtn: "Готово",
@@ -1187,6 +1203,7 @@
                 databaseSyncLabel: "Sincronização de dados",
                 localStorageLabel: "Armazenamento local",
                 airframeReadinessLabel: "Prontidão da frota",
+                moreAppsLabel: "Mais apps:",
                 statTotalFlightTimeLabel: "Tempo total de voo",
                 cumulativeLabel: "Acumulado",
                 viewLogbookLink: "Ver registro",
@@ -1226,13 +1243,13 @@
                 endDateTitle: "Data final",
                 resetBtn: "Redefinir",
                 colActions: "Ações",
-                fleetMgmtTitle: "Gestão da frota de aeronaves",
+                fleetMgmtTitle: "Frota",
                 fleetMgmtSubtitle: "Acompanhe a prontidão operacional, horas de célula e número de voos dos drones",
-                editStatusListBtn: "Editar lista de status",
-                addDroneBtn: "Adicionar drone",
+                editStatusListBtn: "Status",
+                addDroneBtn: "Drone",
                 batteryInventoryTitle: "Inventário de baterias",
                 batteryInventorySubtitle: "Acompanhe ciclos de carga, tempo total de voo e estado de saúde",
-                addBatteryBtn: "Adicionar bateria",
+                addBatteryBtn: "Bateria",
                 logFlightModalTitle: "Registrar voo de drone",
                 closeAriaLabel: "Fechar",
                 addNewDroneTitle: "Adicionar novo drone",
@@ -1257,6 +1274,8 @@
                 editStatusOptionsTitle: "Editar opções de status do drone",
                 editStatusOptionsDesc: "Adicione status operacionais personalizados ou remova os existentes das listas suspensas da frota.",
                 newStatusNameSr: "Nome do novo status",
+                newStatusColorSr: "Cor do novo status",
+                statusColorTitle: "Cor do status",
                 newStatusPlaceholder: "ex.: Em teste / Em espera",
                 addBtn: "Adicionar",
                 doneBtn: "Concluído",
@@ -1431,9 +1450,17 @@
             drones: loadFromStorage('flylog_drones', INITIAL_DRONES),
             batteries: loadFromStorage('flylog_batteries', INITIAL_BATTERIES),
             droneStatuses: loadFromStorage('flylog_drone_statuses', ['Ready', 'Maintenance', 'In Inspection', 'Repairing', 'Retired']),
+            // Optional per-status color overrides, keyed by status name. Statuses
+            // with no entry here fall back to the built-in defaults in
+            // getStatusColor() - so existing users who saved data before this
+            // feature existed see the exact same colors as before, unchanged.
+            droneStatusColors: loadFromStorage('flylog_drone_status_colors', {}),
             customFields: loadFromStorage('flylog_custom_fields', []),
             activeTab: 'dashboard'
         };
+        if (!state.droneStatusColors || typeof state.droneStatusColors !== 'object' || Array.isArray(state.droneStatusColors)) {
+            state.droneStatusColors = {};
+        }
 
         // --- Data migration: link flights to drones/batteries by ID instead of by
         // name, so renaming a drone/battery no longer orphans historical flight logs.
@@ -1521,6 +1548,7 @@
                 localStorage.setItem('flylog_drones', JSON.stringify(state.drones));
                 localStorage.setItem('flylog_batteries', JSON.stringify(state.batteries));
                 localStorage.setItem('flylog_drone_statuses', JSON.stringify(state.droneStatuses));
+                localStorage.setItem('flylog_drone_status_colors', JSON.stringify(state.droneStatusColors));
                 localStorage.setItem('flylog_custom_fields', JSON.stringify(state.customFields));
             } catch (err) {
                 console.error('FlyLog: failed to save to local storage.', err);
@@ -1907,6 +1935,28 @@
             return Number.isInteger(n) ? String(n) : (Math.round(n * 100) / 100).toString();
         }
 
+        // Built-in defaults, matching the colors this app always used before
+        // per-status colors were configurable. A status only gets an entry in
+        // state.droneStatusColors once someone explicitly picks a color for it,
+        // so any status without one - including on data saved before this
+        // feature existed - keeps rendering with these exact same defaults.
+        const DEFAULT_STATUS_COLORS = { Ready: '#34d399', Maintenance: '#fbbf24' };
+        const FALLBACK_STATUS_COLOR = '#94a3b8';
+
+        function getStatusColor(name) {
+            if (state.droneStatusColors && state.droneStatusColors[name]) return state.droneStatusColors[name];
+            return DEFAULT_STATUS_COLORS[name] || FALLBACK_STATUS_COLOR;
+        }
+
+        // Builds an inline style (rather than fixed Tailwind classes) since the
+        // color is now arbitrary/user-chosen: a translucent tinted background
+        // and border derived from the same hex, matching the look the old
+        // hardcoded Tailwind combos had.
+        function statusColorStyle(name) {
+            const hex = getStatusColor(name);
+            return `color:${hex}; background-color:${hex}26; border-color:${hex}66;`;
+        }
+
         function renderFleetGrid() {
             const fleetGrid = document.getElementById('fleetGrid');
             if (!fleetGrid) return;
@@ -1924,9 +1974,7 @@
                     `<option value="${escapeHtml(st)}" ${drone.status === st ? 'selected' : ''}>${escapeHtml(st)}</option>`
                 ).join('');
 
-                const statusColor = drone.status === 'Ready' ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800/50' :
-                                    drone.status === 'Maintenance' ? 'text-amber-400 bg-amber-950/60 border-amber-800/50' :
-                                    'text-slate-400 bg-slate-900 border-slate-700';
+                const statusColor = statusColorStyle(drone.status);
 
                 const customStatsHTML = numericFields.map(field => {
                     const total = droneFlights.reduce((acc, f) => {
@@ -1949,7 +1997,7 @@
                             <h3 class="font-bold text-white text-base">${escapeHtml(drone.name)}</h3>
                             <p class="text-xs text-slate-400 font-mono">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
                         </div>
-                        <select onchange="updateDroneStatus('${drone.id}', this.value)" class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none ${statusColor}">
+                        <select onchange="updateDroneStatus('${drone.id}', this.value)" class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none" style="${statusColor}">
                             ${optionsHTML}
                         </select>
                     </div>
@@ -2178,10 +2226,13 @@
             document.getElementById('formAddStatus').addEventListener('submit', (e) => {
                 e.preventDefault();
                 const input = document.getElementById('newStatusInput');
+                const colorInput = document.getElementById('newStatusColor');
                 const val = input.value.trim();
                 if (val && !state.droneStatuses.includes(val)) {
                     state.droneStatuses.push(val);
+                    if (colorInput && colorInput.value) state.droneStatusColors[val] = colorInput.value;
                     input.value = '';
+                    if (colorInput) colorInput.value = '#94a3b8';
                     renderAll();
                     renderStatusList();
                     showToast(t('toastStatusAdded', { status: val }), 'success');
@@ -2394,15 +2445,25 @@
             state.droneStatuses.forEach((st, idx) => {
                 const isProtected = st === 'Ready';
                 const row = document.createElement('div');
-                row.className = 'flex items-center justify-between p-2 rounded-lg bg-slate-900 border border-slate-800';
+                row.className = 'flex items-center justify-between gap-2 p-2 rounded-lg bg-slate-900 border border-slate-800';
                 row.innerHTML = `
-                    <span class="font-medium text-slate-200">${escapeHtml(st)}${isProtected ? ` <span class='text-[10px] text-slate-500'>${t('defaultStatusSuffix')}</span>` : ''}</span>
-                    <button type="button" onclick="removeStatusOption(${idx})" ${isProtected ? `disabled title="${t('requiredDefaultStatusTitle')}"` : `title="${t('removeOptionTitle')}"`} class="text-rose-400 hover:text-rose-300 disabled:text-slate-700 disabled:cursor-not-allowed p-1 text-xs transition">
+                    <div class="flex items-center gap-2 min-w-0">
+                        <input type="color" value="${getStatusColor(st)}" title="${t('statusColorTitle')}" data-status-color-input class="w-7 h-7 shrink-0 rounded-md border border-slate-800 bg-slate-950 p-0.5 cursor-pointer">
+                        <span class="font-medium text-slate-200 truncate">${escapeHtml(st)}${isProtected ? ` <span class='text-[10px] text-slate-500'>${t('defaultStatusSuffix')}</span>` : ''}</span>
+                    </div>
+                    <button type="button" onclick="removeStatusOption(${idx})" ${isProtected ? `disabled title="${t('requiredDefaultStatusTitle')}"` : `title="${t('removeOptionTitle')}"`} class="text-rose-400 hover:text-rose-300 disabled:text-slate-700 disabled:cursor-not-allowed p-1 text-xs transition shrink-0">
                         <i class="fa-solid fa-trash-can"></i>
                     </button>
                 `;
+                const colorInput = row.querySelector('[data-status-color-input]');
+                colorInput.addEventListener('input', () => updateStatusColor(st, colorInput.value));
                 container.appendChild(row);
             });
+        }
+
+        function updateStatusColor(name, hex) {
+            state.droneStatusColors[name] = hex;
+            renderAll();
         }
 
         function removeStatusOption(index) {
@@ -2421,6 +2482,7 @@
                 return;
             }
             const removed = state.droneStatuses.splice(index, 1)[0];
+            delete state.droneStatusColors[removed];
             renderAll();
             renderStatusList();
             showToast(t('toastStatusRemoved', { status: removed }), 'info');
@@ -2762,6 +2824,7 @@
                 drones: state.drones,
                 batteries: state.batteries,
                 droneStatuses: state.droneStatuses,
+                droneStatusColors: state.droneStatusColors,
                 customFields: state.customFields
             };
             const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
@@ -2826,6 +2889,18 @@
                         state.droneStatuses.push(st);
                     }
                 });
+
+                // Colors are keyed by status name; only fill in ones we don't
+                // already have a color for, so a locally-customized color always
+                // wins over whatever the imported backup had.
+                if (data.droneStatusColors && typeof data.droneStatusColors === 'object' && !Array.isArray(data.droneStatusColors)) {
+                    Object.keys(data.droneStatusColors).forEach(name => {
+                        const hex = data.droneStatusColors[name];
+                        if (typeof hex === 'string' && /^#[0-9a-fA-F]{6}$/.test(hex) && !state.droneStatusColors[name]) {
+                            state.droneStatusColors[name] = hex;
+                        }
+                    });
+                }
 
                 // Merge custom field definitions: dedupe by (label case-insensitive +
                 // type) against what's already here, reusing the existing field's id
