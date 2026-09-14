@@ -165,7 +165,19 @@
                     <span data-i18n="navBatteries">Batteries</span>
                 </button>
 
-                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2" data-i18n="navSectionData">Data & Settings</div>
+                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2" data-i18n="navSectionSettings">Settings</div>
+
+                <button id="btnManageStatusesModalSidebar" title="Add, remove, or recolor drone status options" data-i18n-title="manageStatusesTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-sliders w-5 text-center text-base text-cyan-400"></i>
+                    <span data-i18n="editStatusListBtn">Statuses</span>
+                </button>
+
+                <button id="btnManageFieldsModal" title="Add or remove custom data fields for flight logs" data-i18n-title="manageFieldsTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
+                    <i class="fa-solid fa-table-columns w-5 text-center text-base text-cyan-400"></i>
+                    <span data-i18n="manageFieldsBtn">Custom Fields</span>
+                </button>
+
+                <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider px-3 mt-6 mb-2" data-i18n="navSectionImportExport">Import / Export</div>
 
                 <button id="btnExportBackup" title="Download a full JSON backup of all flights, drones, batteries and statuses" data-i18n-title="exportBackupTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
                     <i class="fa-solid fa-cloud-arrow-down w-5 text-center text-base text-cyan-400"></i>
@@ -181,11 +193,6 @@
                 <button id="btnExportCSV" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
                     <i class="fa-solid fa-file-csv w-5 text-center text-base text-emerald-400"></i>
                     <span data-i18n="exportCsvBtn">Export CSV</span>
-                </button>
-
-                <button id="btnManageFieldsModal" title="Add or remove custom data fields for flight logs" data-i18n-title="manageFieldsTitle" class="sidebar-action w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition text-slate-400 hover:text-slate-100 hover:bg-slate-800/60">
-                    <i class="fa-solid fa-table-columns w-5 text-center text-base text-cyan-400"></i>
-                    <span data-i18n="manageFieldsBtn">Manage Fields</span>
                 </button>
             </div>
 
@@ -362,9 +369,16 @@
 
             <!-- VIEW 2: FLIGHT LOGS LIST -->
             <section id="viewFlights" class="view-panel space-y-6 hidden">
-                <div>
-                    <h2 class="text-xl font-bold text-white" data-i18n="flightLogbookTitle">Flight Logbook</h2>
-                    <p class="text-xs text-slate-400" data-i18n="flightLogbookSubtitle">Flight records, timeline filters, and CSV export</p>
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-white" data-i18n="flightLogbookTitle">Flight Logbook</h2>
+                        <p class="text-xs text-slate-400" data-i18n="flightLogbookSubtitle">Flight records, timeline filters, and CSV export</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="btnManageFieldsModalFlights" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-table-columns text-cyan-400"></i> <span data-i18n="manageFieldsBtn">Custom Fields</span>
+                        </button>
+                    </div>
                 </div>
 
                 <!-- Filters & Search Bar with Date Range Picker -->
@@ -598,7 +612,7 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-sliders text-cyan-400"></i>
-                    <h3 class="font-bold text-white text-base" data-i18n="editStatusOptionsTitle">Edit Drone Status Options</h3>
+                    <h3 class="font-bold text-white text-base" data-i18n="editStatusOptionsTitle">Drone statuses</h3>
                 </div>
                 <button id="closeStatusesModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
@@ -837,7 +851,8 @@
                 navSectionAssets: "Assets & Fleet",
                 navFleetDrones: "Fleet & Drones",
                 navBatteries: "Batteries",
-                navSectionData: "Data & Settings",
+                navSectionSettings: "Settings",
+                navSectionImportExport: "Import / Export",
                 databaseSyncLabel: "Database Sync",
                 localStorageLabel: "Local Storage",
                 airframeReadinessLabel: "Airframe Readiness",
@@ -873,7 +888,8 @@
                 importBackupBtn: "Import Backup",
                 exportCsvBtn: "Export CSV",
                 manageFieldsTitle: "Add or remove custom data fields for flight logs",
-                manageFieldsBtn: "Manage Fields",
+                manageFieldsBtn: "Custom Fields",
+                manageStatusesTitle: "Add, remove, or recolor drone status options",
                 filterSearchPlaceholder: "Search notes, drones, battery labels...",
                 allAirframesOption: "All Airframes",
                 presetThisMonth: "This Month",
@@ -909,7 +925,7 @@
                 baseFlightHoursLabel: "Base Flight Hours",
                 operationalStatusLabel: "Operational Status",
                 saveDroneBtn: "Save Drone",
-                editStatusOptionsTitle: "Edit Drone Status Options",
+                editStatusOptionsTitle: "Drone statuses",
                 editStatusOptionsDesc: "Add custom operational statuses or remove existing ones from your fleet dropdowns.",
                 newStatusNameSr: "New status name",
                 newStatusColorSr: "New status color",
@@ -1015,7 +1031,8 @@
                 navSectionAssets: "Активи та флот",
                 navFleetDrones: "Флот і дрони",
                 navBatteries: "Батареї",
-                navSectionData: "Дані та налаштування",
+                navSectionSettings: "Налаштування",
+                navSectionImportExport: "Імпорт / Експорт",
                 databaseSyncLabel: "Синхронізація БД",
                 localStorageLabel: "Локальне сховище",
                 airframeReadinessLabel: "Готовність флоту",
@@ -1051,7 +1068,8 @@
                 importBackupBtn: "Імпорт резервної копії",
                 exportCsvBtn: "Експорт CSV",
                 manageFieldsTitle: "Додати або видалити користувацькі поля даних для журналу польотів",
-                manageFieldsBtn: "Керувати полями",
+                manageFieldsBtn: "Користувацькі поля",
+                manageStatusesTitle: "Додайте, видаліть або змініть колір статусів дрона",
                 filterSearchPlaceholder: "Пошук за нотатками, дронами, мітками батарей...",
                 allAirframesOption: "Усі апарати",
                 presetThisMonth: "Цей місяць",
@@ -1087,7 +1105,7 @@
                 baseFlightHoursLabel: "Базові години польоту",
                 operationalStatusLabel: "Робочий статус",
                 saveDroneBtn: "Зберегти дрон",
-                editStatusOptionsTitle: "Редагувати варіанти статусів дрона",
+                editStatusOptionsTitle: "Статуси дронів",
                 editStatusOptionsDesc: "Додайте власні робочі статуси або видаліть наявні зі спадних списків флоту.",
                 newStatusNameSr: "Назва нового статусу",
                 newStatusColorSr: "Колір нового статусу",
@@ -1199,7 +1217,8 @@
                 navSectionAssets: "Ativos e frota",
                 navFleetDrones: "Frota e drones",
                 navBatteries: "Baterias",
-                navSectionData: "Dados e configurações",
+                navSectionSettings: "Configurações",
+                navSectionImportExport: "Importar / Exportar",
                 databaseSyncLabel: "Sincronização de dados",
                 localStorageLabel: "Armazenamento local",
                 airframeReadinessLabel: "Prontidão da frota",
@@ -1235,7 +1254,8 @@
                 importBackupBtn: "Importar backup",
                 exportCsvBtn: "Exportar CSV",
                 manageFieldsTitle: "Adicionar ou remover campos de dados personalizados para os registros de voo",
-                manageFieldsBtn: "Gerenciar campos",
+                manageFieldsBtn: "Campos personalizados",
+                manageStatusesTitle: "Adicione, remova ou recolora as opções de status do drone",
                 filterSearchPlaceholder: "Buscar notas, drones, etiquetas de bateria...",
                 allAirframesOption: "Todas as aeronaves",
                 presetThisMonth: "Este mês",
@@ -1271,7 +1291,7 @@
                 baseFlightHoursLabel: "Horas de voo base",
                 operationalStatusLabel: "Status operacional",
                 saveDroneBtn: "Salvar drone",
-                editStatusOptionsTitle: "Editar opções de status do drone",
+                editStatusOptionsTitle: "Status do drone",
                 editStatusOptionsDesc: "Adicione status operacionais personalizados ou remova os existentes das listas suspensas da frota.",
                 newStatusNameSr: "Nome do novo status",
                 newStatusColorSr: "Cor do novo status",
@@ -1594,8 +1614,11 @@
             document.getElementById('btnInlineAddDrone')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnManageStatusesModal')?.addEventListener('click', () => openStatusesModal());
 
-            // Sidebar: Manage Fields
+            // Statuses and Custom Fields are each reachable from two places: the
+            // sidebar, and a button on their most relevant page (Fleet, Flight Logs).
+            document.getElementById('btnManageStatusesModalSidebar')?.addEventListener('click', () => openStatusesModal());
             document.getElementById('btnManageFieldsModal')?.addEventListener('click', () => openFieldsModal());
+            document.getElementById('btnManageFieldsModalFlights')?.addEventListener('click', () => openFieldsModal());
 
             // Batteries view buttons
             document.getElementById('btnAddBatteryModal')?.addEventListener('click', () => openBatteryModal());
