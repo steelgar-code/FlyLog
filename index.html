@@ -1006,6 +1006,9 @@
                 deleteLogTitle: "Delete Log",
                 uavPlatformFallback: "UAV Platform",
                 editActionBtn: "Edit",
+                dragToReorderTitle: "Drag to reorder",
+                moveUpTitle: "Move up",
+                moveDownTitle: "Move down",
                 flightTimeLabel: "Flight Time",
                 requiredDefaultStatusTitle: "Required default status",
                 removeOptionTitle: "Remove option",
@@ -1192,6 +1195,9 @@
                 deleteLogTitle: "Видалити запис",
                 uavPlatformFallback: "Платформа БПЛА",
                 editActionBtn: "Редагувати",
+                dragToReorderTitle: "Перетягніть, щоб змінити порядок",
+                moveUpTitle: "Перемістити вгору",
+                moveDownTitle: "Перемістити вниз",
                 flightTimeLabel: "Час польоту",
                 requiredDefaultStatusTitle: "Обов'язковий стандартний статус",
                 removeOptionTitle: "Видалити варіант",
@@ -1372,6 +1378,9 @@
                 deleteLogTitle: "Excluir registro",
                 uavPlatformFallback: "Plataforma de drone",
                 editActionBtn: "Editar",
+                dragToReorderTitle: "Arraste para reordenar",
+                moveUpTitle: "Mover para cima",
+                moveDownTitle: "Mover para baixo",
                 flightTimeLabel: "Tempo de voo",
                 requiredDefaultStatusTitle: "Status padrão obrigatório",
                 removeOptionTitle: "Remover opção",
@@ -1980,6 +1989,37 @@
             return `color:${hex}; background-color:${hex}26; border-color:${hex}66;`;
         }
 
+        // Which cards are expanded, by id. Collapsed is the default (nothing in
+        // the set) every time the app loads; this only tracks state within the
+        // current session so an incidental re-render (status change, language
+        // switch) never snaps an open card shut.
+        let expandedDroneIds = new Set();
+        let draggedDroneId = null;
+
+        function toggleDroneExpanded(id) {
+            if (expandedDroneIds.has(id)) expandedDroneIds.delete(id);
+            else expandedDroneIds.add(id);
+            renderFleetGrid();
+        }
+
+        function moveDrone(id, direction) {
+            const idx = state.drones.findIndex(d => d.id === id);
+            const targetIdx = idx + (direction === 'up' ? -1 : 1);
+            if (idx === -1 || targetIdx < 0 || targetIdx >= state.drones.length) return;
+            const [moved] = state.drones.splice(idx, 1);
+            state.drones.splice(targetIdx, 0, moved);
+            renderAll();
+        }
+
+        function reorderDrones(sourceId, targetId) {
+            const sourceIdx = state.drones.findIndex(d => d.id === sourceId);
+            if (sourceIdx === -1 || sourceId === targetId) return;
+            const [moved] = state.drones.splice(sourceIdx, 1);
+            const targetIdx = state.drones.findIndex(d => d.id === targetId);
+            state.drones.splice(targetIdx === -1 ? state.drones.length : targetIdx, 0, moved);
+            renderAll();
+        }
+
         function renderFleetGrid() {
             const fleetGrid = document.getElementById('fleetGrid');
             if (!fleetGrid) return;
@@ -1987,11 +2027,12 @@
 
             const numericFields = state.customFields.filter(f => f.type === 'number');
 
-            state.drones.forEach(drone => {
+            state.drones.forEach((drone, idx) => {
                 const droneFlights = state.flights.filter(f => f.droneId === drone.id);
                 const loggedMins = droneFlights.reduce((acc, f) => acc + (f.duration || 0), 0);
                 const totalHours = (drone.flightHours + (loggedMins / 60)).toFixed(1);
                 const flightCount = droneFlights.length;
+                const isExpanded = expandedDroneIds.has(drone.id);
 
                 const optionsHTML = state.droneStatuses.map(st =>
                     `<option value="${escapeHtml(st)}" ${drone.status === st ? 'selected' : ''}>${escapeHtml(st)}</option>`
@@ -1999,53 +2040,104 @@
 
                 const statusColor = statusColorStyle(drone.status);
 
-                const customStatsHTML = numericFields.map(field => {
-                    const total = droneFlights.reduce((acc, f) => {
-                        const v = f.customValues ? f.customValues[field.id] : undefined;
-                        return acc + (typeof v === 'number' && !isNaN(v) ? v : 0);
-                    }, 0);
-                    return `
-                        <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('totalFieldLabel', { label: escapeHtml(field.label) })}</span>
-                            <span class="text-sm font-extrabold text-teal-400 font-mono">${formatCustomNumber(total)}</span>
+                const card = document.createElement('div');
+                card.className = 'rounded-2xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition overflow-hidden';
+                card.draggable = false;
+
+                card.addEventListener('dragstart', () => { draggedDroneId = drone.id; card.classList.add('opacity-50'); });
+                card.addEventListener('dragend', () => { card.draggable = false; card.classList.remove('opacity-50'); });
+                card.addEventListener('dragover', (e) => e.preventDefault());
+                card.addEventListener('drop', () => {
+                    if (draggedDroneId !== null && draggedDroneId !== drone.id) reorderDrones(draggedDroneId, drone.id);
+                    draggedDroneId = null;
+                });
+
+                const header = document.createElement('div');
+                header.className = 'flex items-center gap-3 p-4 cursor-pointer select-none';
+                header.tabIndex = 0;
+                header.setAttribute('role', 'button');
+                header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                header.innerHTML = `
+                    <i class="fa-solid fa-grip-vertical text-slate-600 hover:text-slate-400 cursor-grab text-xs shrink-0" title="${t('dragToReorderTitle')}" data-grip></i>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-white text-base truncate">${escapeHtml(drone.name)}</h3>
+                        <p class="text-xs text-slate-400 font-mono truncate">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
+                    </div>
+                    <select class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none shrink-0" style="${statusColor}">${optionsHTML}</select>
+                    <i class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0 transition-transform${isExpanded ? ' rotate-180' : ''}"></i>
+                `;
+
+                const grip = header.querySelector('[data-grip]');
+                grip.addEventListener('mousedown', () => { card.draggable = true; });
+                grip.addEventListener('click', (e) => e.stopPropagation());
+
+                const select = header.querySelector('select');
+                select.addEventListener('mousedown', (e) => e.stopPropagation());
+                select.addEventListener('click', (e) => e.stopPropagation());
+                select.addEventListener('change', () => updateDroneStatus(drone.id, select.value));
+
+                const toggle = () => toggleDroneExpanded(drone.id);
+                header.addEventListener('click', toggle);
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+                });
+                card.appendChild(header);
+
+                if (isExpanded) {
+                    const customStatsHTML = numericFields.map(field => {
+                        const total = droneFlights.reduce((acc, f) => {
+                            const v = f.customValues ? f.customValues[field.id] : undefined;
+                            return acc + (typeof v === 'number' && !isNaN(v) ? v : 0);
+                        }, 0);
+                        return `
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('totalFieldLabel', { label: escapeHtml(field.label) })}</span>
+                                <span class="text-sm font-extrabold text-teal-400 font-mono">${formatCustomNumber(total)}</span>
+                            </div>
+                        `;
+                    }).join('');
+
+                    const body = document.createElement('div');
+                    body.className = 'px-4 pb-4 space-y-4';
+                    body.innerHTML = `
+                        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statTotalFlightTimeLabel')}</span>
+                                <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statLoggedFlightsLabel')}</span>
+                                <span class="text-sm font-extrabold text-white font-mono">${tCount('fleetFlightCount', flightCount)}</span>
+                            </div>
+                            ${customStatsHTML}
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+                            <div class="flex items-center gap-1">
+                                <button data-move-up title="${t('moveUpTitle')}" ${idx === 0 ? 'disabled' : ''} class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <i class="fa-solid fa-chevron-up text-[10px]"></i>
+                                </button>
+                                <button data-move-down title="${t('moveDownTitle')}" ${idx === state.drones.length - 1 ? 'disabled' : ''} class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button data-edit class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
+                                    <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
+                                </button>
+                                <button data-delete class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
+                                </button>
+                            </div>
                         </div>
                     `;
-                }).join('');
+                    body.querySelector('[data-move-up]').addEventListener('click', (e) => { e.stopPropagation(); moveDrone(drone.id, 'up'); });
+                    body.querySelector('[data-move-down]').addEventListener('click', (e) => { e.stopPropagation(); moveDrone(drone.id, 'down'); });
+                    body.querySelector('[data-edit]').addEventListener('click', (e) => { e.stopPropagation(); editDrone(drone.id); });
+                    body.querySelector('[data-delete]').addEventListener('click', (e) => { e.stopPropagation(); confirmDeleteDrone(drone.id); });
+                    card.appendChild(body);
+                }
 
-                const card = document.createElement('div');
-                card.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4 hover:border-slate-700 transition';
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-white text-base">${escapeHtml(drone.name)}</h3>
-                            <p class="text-xs text-slate-400 font-mono">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
-                        </div>
-                        <select onchange="updateDroneStatus('${drone.id}', this.value)" class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none" style="${statusColor}">
-                            ${optionsHTML}
-                        </select>
-                    </div>
-
-                    <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
-                        <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statTotalFlightTimeLabel')}</span>
-                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
-                        </div>
-                        <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statLoggedFlightsLabel')}</span>
-                            <span class="text-sm font-extrabold text-white font-mono">${tCount('fleetFlightCount', flightCount)}</span>
-                        </div>
-                        ${customStatsHTML}
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/60">
-                        <button onclick="editDrone('${drone.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
-                        </button>
-                        <button onclick="confirmDeleteDrone('${drone.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
-                        </button>
-                    </div>
-                `;
                 fleetGrid.appendChild(card);
             });
         }
@@ -2057,53 +2149,130 @@
             return escapeHtml(status);
         }
 
+        // Same session-only "collapsed by default" tracking as expandedDroneIds.
+        let expandedBatteryIds = new Set();
+        let draggedBatteryId = null;
+
+        function toggleBatteryExpanded(id) {
+            if (expandedBatteryIds.has(id)) expandedBatteryIds.delete(id);
+            else expandedBatteryIds.add(id);
+            renderBatteriesGrid();
+        }
+
+        function moveBattery(id, direction) {
+            const idx = state.batteries.findIndex(b => b.id === id);
+            const targetIdx = idx + (direction === 'up' ? -1 : 1);
+            if (idx === -1 || targetIdx < 0 || targetIdx >= state.batteries.length) return;
+            const [moved] = state.batteries.splice(idx, 1);
+            state.batteries.splice(targetIdx, 0, moved);
+            renderAll();
+        }
+
+        function reorderBatteries(sourceId, targetId) {
+            const sourceIdx = state.batteries.findIndex(b => b.id === sourceId);
+            if (sourceIdx === -1 || sourceId === targetId) return;
+            const [moved] = state.batteries.splice(sourceIdx, 1);
+            const targetIdx = state.batteries.findIndex(b => b.id === targetId);
+            state.batteries.splice(targetIdx === -1 ? state.batteries.length : targetIdx, 0, moved);
+            renderAll();
+        }
+
         function renderBatteriesGrid() {
             const batGrid = document.getElementById('batteriesGrid');
             if (!batGrid) return;
             batGrid.innerHTML = '';
 
-            state.batteries.forEach(bat => {
+            state.batteries.forEach((bat, idx) => {
                 const batFlights = state.flights.filter(f => f.batteryId === bat.id);
                 const loggedMins = batFlights.reduce((acc, f) => acc + (f.duration || 0), 0);
                 const totalHours = ((bat.flightHours || 0) + (loggedMins / 60)).toFixed(1);
+                const isExpanded = expandedBatteryIds.has(bat.id);
 
                 const healthClass = bat.status === 'Good' ? 'text-emerald-400 bg-emerald-950/60 border-emerald-800/50' :
                                    bat.status === 'Warning' ? 'text-amber-400 bg-amber-950/60 border-amber-800/50' :
                                    'text-slate-400 bg-slate-900 border-slate-700';
 
                 const card = document.createElement('div');
-                card.className = 'p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4 hover:border-slate-700 transition';
-                card.innerHTML = `
-                    <div class="flex justify-between items-start">
-                        <div>
-                            <h3 class="font-bold text-white text-base">${escapeHtml(bat.name)}</h3>
-                            <span class="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold border ${healthClass}">${batteryStatusShortLabel(bat.status)}</span>
-                        </div>
-                        <div class="p-2 rounded-xl bg-amber-950/50 border border-amber-800/40 text-amber-400">
-                            <i class="fa-solid fa-bolt text-base"></i>
-                        </div>
-                    </div>
+                card.className = 'rounded-2xl bg-slate-900 border border-slate-800/80 hover:border-slate-700 transition overflow-hidden';
+                card.draggable = false;
 
-                    <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
-                        <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('chargeCyclesLabel')}</span>
-                            <span class="text-sm font-extrabold text-amber-400 font-mono">${tCount('batteryCyclesValue', bat.cycles)}</span>
-                        </div>
-                        <div>
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('flightTimeLabel')}</span>
-                            <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
-                        </div>
-                    </div>
+                card.addEventListener('dragstart', () => { draggedBatteryId = bat.id; card.classList.add('opacity-50'); });
+                card.addEventListener('dragend', () => { card.draggable = false; card.classList.remove('opacity-50'); });
+                card.addEventListener('dragover', (e) => e.preventDefault());
+                card.addEventListener('drop', () => {
+                    if (draggedBatteryId !== null && draggedBatteryId !== bat.id) reorderBatteries(draggedBatteryId, bat.id);
+                    draggedBatteryId = null;
+                });
 
-                    <div class="flex justify-end gap-2 pt-2 border-t border-slate-800/60">
-                        <button onclick="editBattery('${bat.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
-                        </button>
-                        <button onclick="confirmDeleteBattery('${bat.id}')" class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
-                            <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
-                        </button>
+                const header = document.createElement('div');
+                header.className = 'flex items-center gap-3 p-4 cursor-pointer select-none';
+                header.tabIndex = 0;
+                header.setAttribute('role', 'button');
+                header.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+                header.innerHTML = `
+                    <i class="fa-solid fa-grip-vertical text-slate-600 hover:text-slate-400 cursor-grab text-xs shrink-0" title="${t('dragToReorderTitle')}" data-grip></i>
+                    <div class="flex-1 min-w-0">
+                        <h3 class="font-bold text-white text-base truncate">${escapeHtml(bat.name)}</h3>
+                        <span class="inline-block mt-1 text-[11px] px-2 py-0.5 rounded-full font-semibold border ${healthClass}">${batteryStatusShortLabel(bat.status)}</span>
                     </div>
+                    <div class="p-2 rounded-xl bg-amber-950/50 border border-amber-800/40 text-amber-400 shrink-0">
+                        <i class="fa-solid fa-bolt text-base"></i>
+                    </div>
+                    <i class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0 transition-transform${isExpanded ? ' rotate-180' : ''}"></i>
                 `;
+
+                const grip = header.querySelector('[data-grip]');
+                grip.addEventListener('mousedown', () => { card.draggable = true; });
+                grip.addEventListener('click', (e) => e.stopPropagation());
+
+                const toggle = () => toggleBatteryExpanded(bat.id);
+                header.addEventListener('click', toggle);
+                header.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
+                });
+                card.appendChild(header);
+
+                if (isExpanded) {
+                    const body = document.createElement('div');
+                    body.className = 'px-4 pb-4 space-y-4';
+                    body.innerHTML = `
+                        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-950 rounded-xl border border-slate-800/80">
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('chargeCyclesLabel')}</span>
+                                <span class="text-sm font-extrabold text-amber-400 font-mono">${tCount('batteryCyclesValue', bat.cycles)}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('flightTimeLabel')}</span>
+                                <span class="text-sm font-extrabold text-cyan-400 font-mono">${totalHours} ${t('unitHrs')}</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center justify-between gap-2 pt-2 border-t border-slate-800/60">
+                            <div class="flex items-center gap-1">
+                                <button data-move-up title="${t('moveUpTitle')}" ${idx === 0 ? 'disabled' : ''} class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <i class="fa-solid fa-chevron-up text-[10px]"></i>
+                                </button>
+                                <button data-move-down title="${t('moveDownTitle')}" ${idx === state.batteries.length - 1 ? 'disabled' : ''} class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 disabled:opacity-30 disabled:cursor-not-allowed transition">
+                                    <i class="fa-solid fa-chevron-down text-[10px]"></i>
+                                </button>
+                            </div>
+                            <div class="flex gap-2">
+                                <button data-edit class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition flex items-center gap-1">
+                                    <i class="fa-solid fa-pen-to-square text-cyan-400"></i> ${t('editActionBtn')}
+                                </button>
+                                <button data-delete class="px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 text-xs font-medium transition flex items-center gap-1">
+                                    <i class="fa-solid fa-trash-can"></i> ${t('deleteBtn')}
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    body.querySelector('[data-move-up]').addEventListener('click', (e) => { e.stopPropagation(); moveBattery(bat.id, 'up'); });
+                    body.querySelector('[data-move-down]').addEventListener('click', (e) => { e.stopPropagation(); moveBattery(bat.id, 'down'); });
+                    body.querySelector('[data-edit]').addEventListener('click', (e) => { e.stopPropagation(); editBattery(bat.id); });
+                    body.querySelector('[data-delete]').addEventListener('click', (e) => { e.stopPropagation(); confirmDeleteBattery(bat.id); });
+                    card.appendChild(body);
+                }
+
                 batGrid.appendChild(card);
             });
         }
@@ -2197,7 +2366,9 @@
                         state.flights.forEach(f => { if (f.droneId === drone.id) f.droneName = name; });
                     }
                 } else {
-                    state.drones.push({
+                    // New drones go to the top of the list (and so, of the
+                    // Airframe selector on the Log Flight form too).
+                    state.drones.unshift({
                         id: 'uav-' + Date.now(),
                         name,
                         model,
@@ -2231,7 +2402,9 @@
                         state.flights.forEach(f => { if (f.batteryId === bat.id) f.batteryName = name; });
                     }
                 } else {
-                    state.batteries.push({
+                    // New batteries go to the top of the list (and so, of the
+                    // Battery Label selector on the Log Flight form too).
+                    state.batteries.unshift({
                         id: 'bat-' + Date.now(),
                         name,
                         cycles,
