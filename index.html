@@ -305,12 +305,16 @@
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Chart 1: Flight Hours Trend -->
                     <div class="lg:col-span-2 p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4">
-                        <div class="flex items-center justify-between">
+                        <div class="flex items-center justify-between flex-wrap gap-2">
                             <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
                                 <i class="fa-solid fa-chart-line text-cyan-400"></i>
                                 <span data-i18n="chartFlightHoursTrend">Flight Hours Trend</span>
                             </h3>
-                            <span class="text-xs text-slate-400" data-i18n="monthlyAggregates">Monthly Aggregates</span>
+                            <div class="flex items-center gap-1 text-[10px] font-mono">
+                                <button type="button" data-hours-period="weekly" class="px-2 py-1 rounded-lg border transition" data-i18n="periodWeeklyBtn">Weekly</button>
+                                <button type="button" data-hours-period="monthly" class="px-2 py-1 rounded-lg border transition" data-i18n="periodMonthlyBtn">Monthly</button>
+                                <button type="button" data-hours-period="30d" class="px-2 py-1 rounded-lg border transition" data-i18n="periodLast30DaysBtn">30 Days</button>
+                            </div>
                         </div>
                         <div class="h-64">
                             <canvas id="chartFlightHours"></canvas>
@@ -869,7 +873,9 @@
                 powerPacksLabel: "Power Packs",
                 managePacksLink: "Manage Packs",
                 chartFlightHoursTrend: "Flight Hours Trend",
-                monthlyAggregates: "Monthly Aggregates",
+                periodWeeklyBtn: "Weekly",
+                periodMonthlyBtn: "Monthly",
+                periodLast30DaysBtn: "30 Days",
                 chartAirframeUsage: "Airframe Usage",
                 flightShareLabel: "Flight Share",
                 recentOperationsTitle: "Recent Operations",
@@ -1052,7 +1058,9 @@
                 powerPacksLabel: "Блоки живлення",
                 managePacksLink: "Керувати блоками",
                 chartFlightHoursTrend: "Динаміка годин польоту",
-                monthlyAggregates: "Місячні підсумки",
+                periodWeeklyBtn: "Тижні",
+                periodMonthlyBtn: "Місяці",
+                periodLast30DaysBtn: "30 днів",
                 chartAirframeUsage: "Використання дронів",
                 flightShareLabel: "Частка польотів",
                 recentOperationsTitle: "Останні операції",
@@ -1241,7 +1249,9 @@
                 powerPacksLabel: "Pacotes de energia",
                 managePacksLink: "Gerenciar pacotes",
                 chartFlightHoursTrend: "Tendência de horas de voo",
-                monthlyAggregates: "Totais mensais",
+                periodWeeklyBtn: "Semanal",
+                periodMonthlyBtn: "Mensal",
+                periodLast30DaysBtn: "30 dias",
                 chartAirframeUsage: "Uso por aeronave",
                 flightShareLabel: "Participação nos voos",
                 recentOperationsTitle: "Operações recentes",
@@ -1515,6 +1525,11 @@
         let chartAirframeInstance = null;
         // One Chart.js instance per numeric custom field, keyed by field id.
         let customChartInstances = {};
+        // Which aggregation the Flight Hours Trend chart shows: 'weekly' (8
+        // weeks), 'monthly' (6 months, the original/default view), or '30d'
+        // (daily buckets over the last 30 days). Session-only, resets to the
+        // original default on reload.
+        let dashboardHoursPeriod = 'monthly';
 
         document.addEventListener('DOMContentLoaded', () => {
             applyStaticTranslations();
@@ -2771,6 +2786,61 @@
             };
         }
 
+        // Last 8 calendar weeks (Mon-Sun), current week included and last.
+        function computeWeeklyHours() {
+            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const now = new Date();
+            const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon .. 6=Sun
+            const thisWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
+            const buckets = [];
+            for (let i = 7; i >= 0; i--) {
+                const start = new Date(thisWeekStart.getFullYear(), thisWeekStart.getMonth(), thisWeekStart.getDate() - i * 7);
+                const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
+                buckets.push({ start, end, label: `${monthNames[start.getMonth()]} ${start.getDate()}`, mins: 0 });
+            }
+            state.flights.forEach(f => {
+                if (!f.startTime) return;
+                const parsed = new Date(f.startTime);
+                if (isNaN(parsed.getTime())) return;
+                const bucket = buckets.find(b => parsed >= b.start && parsed < b.end);
+                if (bucket) bucket.mins += (f.duration || 0);
+            });
+            return {
+                labels: buckets.map(b => b.label),
+                data: buckets.map(b => Math.round((b.mins / 60) * 10) / 10)
+            };
+        }
+
+        // One bucket per calendar day for the last `days` days, today included.
+        function computeDailyHours(days) {
+            const now = new Date();
+            const buckets = [];
+            for (let i = days - 1; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+                buckets.push({
+                    key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+                    label: `${d.getMonth() + 1}/${d.getDate()}`,
+                    mins: 0
+                });
+            }
+            state.flights.forEach(f => {
+                if (!f.startTime) return;
+                const key = f.startTime.substring(0, 10);
+                const bucket = buckets.find(b => b.key === key);
+                if (bucket) bucket.mins += (f.duration || 0);
+            });
+            return {
+                labels: buckets.map(b => b.label),
+                data: buckets.map(b => Math.round((b.mins / 60) * 10) / 10)
+            };
+        }
+
+        function computeHoursTrend(period) {
+            if (period === 'weekly') return computeWeeklyHours();
+            if (period === '30d') return computeDailyHours(30);
+            return computeMonthlyHours();
+        }
+
         // Same monthly-bucket approach as computeMonthlyHours, but summing one
         // numeric custom field's values (across all aircraft) instead of duration.
         function computeMonthlyCustomFieldTotal(fieldId) {
@@ -2871,9 +2941,39 @@
             });
         }
 
+        function updateHoursPeriodButtons() {
+            document.querySelectorAll('[data-hours-period]').forEach(btn => {
+                const isActive = btn.dataset.hoursPeriod === dashboardHoursPeriod;
+                btn.classList.toggle('bg-cyan-950/40', isActive);
+                btn.classList.toggle('text-cyan-400', isActive);
+                btn.classList.toggle('border-cyan-800/40', isActive);
+                btn.classList.toggle('bg-slate-950', !isActive);
+                btn.classList.toggle('text-slate-400', !isActive);
+                btn.classList.toggle('hover:text-white', !isActive);
+                btn.classList.toggle('border-slate-800', !isActive);
+            });
+        }
+
+        function setHoursPeriod(period) {
+            if (dashboardHoursPeriod === period) return;
+            dashboardHoursPeriod = period;
+            updateHoursPeriodButtons();
+            if (chartHoursInstance) {
+                const trend = computeHoursTrend(dashboardHoursPeriod);
+                chartHoursInstance.data.labels = trend.labels;
+                chartHoursInstance.data.datasets[0].data = trend.data;
+                chartHoursInstance.update();
+            }
+        }
+
         function initCharts() {
             const ctxHours = document.getElementById('chartFlightHours')?.getContext('2d');
             const ctxAirframe = document.getElementById('chartMissionTypes')?.getContext('2d');
+
+            updateHoursPeriodButtons();
+            document.querySelectorAll('[data-hours-period]').forEach(btn => {
+                btn.addEventListener('click', () => setHoursPeriod(btn.dataset.hoursPeriod));
+            });
 
             if (typeof Chart === 'undefined') {
                 console.warn('FlyLog: Chart.js failed to load (likely no network access) — charts will be skipped, the rest of the app still works.');
@@ -2882,7 +2982,7 @@
 
             try {
                 if (ctxHours) {
-                    const trend = computeMonthlyHours();
+                    const trend = computeHoursTrend(dashboardHoursPeriod);
                     chartHoursInstance = new Chart(ctxHours, {
                         type: 'line',
                         data: {
@@ -2946,7 +3046,7 @@
                     chartAirframeInstance.update();
                 }
                 if (chartHoursInstance) {
-                    const trend = computeMonthlyHours();
+                    const trend = computeHoursTrend(dashboardHoursPeriod);
                     chartHoursInstance.data.labels = trend.labels;
                     chartHoursInstance.data.datasets[0].data = trend.data;
                     chartHoursInstance.update();
