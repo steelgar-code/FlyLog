@@ -40,7 +40,10 @@ self.addEventListener('install', (event) => {
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keys) =>
-            Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+            // FlyLog, FlySend, FlyStock and FlySky share the steelgar-code.github.io
+            // origin, and Cache Storage is per origin: only delete FlyLog's own old
+            // caches, never the other apps' offline copies.
+            Promise.all(keys.filter((key) => key.startsWith('flylog-cache-') && key !== CACHE_NAME).map((key) => caches.delete(key)))
         )
     );
     self.clients.claim();
