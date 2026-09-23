@@ -2,8 +2,8 @@
 //
 // Strategy: "network-first, falling back to cache, and cache everything that
 // succeeds." This keeps the app fresh when online, while transparently
-// building up a full offline cache (the HTML page itself, plus the Tailwind,
-// FontAwesome CSS/font files, and Chart.js CDN assets) as they're requested.
+// building up a full offline cache as files are requested. The Tailwind,
+// FontAwesome and Chart.js CDN assets are also cached up front at install.
 // Once everything has been fetched successfully at least once, the app keeps
 // working with no network connection at all — including the icon fonts,
 // which are requested indirectly by FontAwesome's CSS.
@@ -24,16 +24,42 @@ const PRECACHE_URLS = [
     './icon-maskable-512.png'
 ];
 
+// CDN assets the page loads (Tailwind, FontAwesome, Chart.js), cached up front
+// so the app is styled offline even right after install — runtime caching
+// alone only picks them up once they load through an already-active worker.
+// Scripts/CSS are requested by the page without CORS, so they are cached as
+// opaque "no-cors" responses; web fonts are always fetched with CORS, so they
+// must be cached as CORS responses or the browser refuses them.
+const CDN_NO_CORS = [
+    'https://cdn.tailwindcss.com',
+    'https://cdn.jsdelivr.net/npm/chart.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css'
+];
+const CDN_CORS = [
+    'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/webfonts/fa-solid-900.woff2'
+];
+
+function cacheable(response) {
+    return response && (response.ok || response.type === 'opaque');
+}
+
+// Best effort: one unreachable file must not abort the whole install.
+function precache(cache, request) {
+    return fetch(request)
+        .then((response) => (cacheable(response) ? cache.put(request, response) : undefined))
+        .catch(() => {});
+}
+
 self.addEventListener('install', (event) => {
     self.skipWaiting();
     event.waitUntil(
-        caches.open(CACHE_NAME).then((cache) => {
-            // Best-effort: some of these paths may not exist depending on how
-            // the file was renamed/hosted, so failures here are ignored.
-            return Promise.all(
-                PRECACHE_URLS.map((url) => cache.add(url).catch(() => {}))
-            );
-        })
+        caches.open(CACHE_NAME).then((cache) => Promise.all([
+            // Some app paths may not exist depending on how the file was
+            // renamed/hosted, so failures are ignored.
+            ...PRECACHE_URLS.map((url) => precache(cache, new Request(url, { cache: 'reload' }))),
+            ...CDN_NO_CORS.map((url) => precache(cache, new Request(url, { mode: 'no-cors' }))),
+            ...CDN_CORS.map((url) => precache(cache, new Request(url, { mode: 'cors' })))
+        ]))
     );
 });
 
@@ -52,6 +78,7 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     // Only handle simple GET requests; let everything else pass through normally.
     if (event.request.method !== 'GET') return;
+    if (!event.request.url.startsWith('http')) return;
 
     event.respondWith(
         fetch(event.request)
@@ -59,10 +86,15 @@ self.addEventListener('fetch', (event) => {
                 // Cache a copy of anything that loads successfully (the page
                 // itself, and any cross-origin CDN asset it pulls in), so it's
                 // available next time there's no network.
-                const copy = networkResponse.clone();
-                caches.open(CACHE_NAME).then((cache) => {
-                    cache.put(event.request, copy).catch(() => {});
-                });
+                // Never let an error response (404/500) replace a good copy.
+                if (cacheable(networkResponse)) {
+                    const copy = networkResponse.clone();
+                    event.waitUntil(
+                        caches.open(CACHE_NAME)
+                            .then((cache) => cache.put(event.request, copy))
+                            .catch(() => {})
+                    );
+                }
                 return networkResponse;
             })
             .catch(() => {
