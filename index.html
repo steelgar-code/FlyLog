@@ -1564,12 +1564,43 @@
         let deferredInstallPrompt = null;
         const installPromptEl = document.getElementById('installPrompt');
 
+        // FlyLog, FlySend and FlySky share the steelgar-code.github.io origin
+        // (and therefore localStorage), so the old generic
+        // 'pwa-install-dismissed' key made a dismissal in one app hide the
+        // prompt in all of them. FlyLog now keeps its own key. On the first
+        // run of this version the new key is seeded once from the legacy one,
+        // so nobody who currently doesn't see the prompt starts seeing it.
+        // The legacy key is left untouched for apps still reading it.
+        const INSTALL_DISMISSED_KEY = 'flylog_install_dismissed';
+        const LEGACY_INSTALL_DISMISSED_KEY = 'pwa-install-dismissed';
+        (function migrateInstallDismissed() {
+            try {
+                if (localStorage.getItem(INSTALL_DISMISSED_KEY) === null) {
+                    localStorage.setItem(INSTALL_DISMISSED_KEY, localStorage.getItem(LEGACY_INSTALL_DISMISSED_KEY) ? '1' : '0');
+                }
+            } catch (err) {}
+        })();
+
+        function isInstallDismissed() {
+            try { return localStorage.getItem(INSTALL_DISMISSED_KEY) === '1'; } catch (err) { return false; }
+        }
+
+        // Already running as an installed app (Android/desktop, or iOS home screen).
+        function isStandalone() {
+            return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+        }
+
         window.addEventListener('beforeinstallprompt', (e) => {
             e.preventDefault();
             deferredInstallPrompt = e;
-            if (localStorage.getItem('pwa-install-dismissed')) return;
-            if (window.matchMedia('(display-mode: standalone)').matches) return;
+            if (isInstallDismissed()) return;
+            if (isStandalone()) return;
             installPromptEl.classList.remove('hidden');
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installPromptEl.classList.add('hidden');
+            deferredInstallPrompt = null;
         });
 
         document.getElementById('installBtn').addEventListener('click', () => {
@@ -1583,7 +1614,7 @@
 
         document.getElementById('installDismiss').addEventListener('click', () => {
             installPromptEl.classList.add('hidden');
-            localStorage.setItem('pwa-install-dismissed', 'true');
+            try { localStorage.setItem(INSTALL_DISMISSED_KEY, '1'); } catch (err) {}
         });
 
         function saveState() {
