@@ -303,6 +303,28 @@
                     </div>
                 </div>
 
+                <!-- Fleet Lifespan Summary: span between each drone's maiden and latest flight -->
+                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4">
+                    <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-hourglass-half text-indigo-400"></i>
+                        <span data-i18n="fleetLifespanTitle">Fleet Lifespan</span>
+                    </h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanMinLabel">Min</span>
+                            <span id="statLifespanMin" class="text-sm font-extrabold text-emerald-400 font-mono">–</span>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanAvgLabel">Average</span>
+                            <span id="statLifespanAvg" class="text-sm font-extrabold text-cyan-400 font-mono">–</span>
+                        </div>
+                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanMaxLabel">Max</span>
+                            <span id="statLifespanMax" class="text-sm font-extrabold text-amber-400 font-mono">–</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Visual Analytics Charts Row -->
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                     <!-- Chart 1: Flight Hours Trend -->
@@ -876,6 +898,13 @@
                 totalMissionsLabel: "Total Missions",
                 statActiveAirframesLabel: "Active Airframes",
                 fleetSizeLabel: "Fleet Size",
+                fleetLifespanTitle: "Fleet Lifespan",
+                lifespanMinLabel: "Min",
+                lifespanAvgLabel: "Average",
+                lifespanMaxLabel: "Max",
+                maidenFlightLabel: "Maiden Flight",
+                latestFlightLabel: "Latest Flight",
+                droneLifespanLabel: "Lifespan",
                 manageFleetLink: "Manage Fleet",
                 statBatteriesTrackedLabel: "Batteries Tracked",
                 powerPacksLabel: "Power Packs",
@@ -1066,6 +1095,13 @@
                 totalMissionsLabel: "Усього місій",
                 statActiveAirframesLabel: "Активні дрони",
                 fleetSizeLabel: "Розмір флоту",
+                fleetLifespanTitle: "Термін служби флоту",
+                lifespanMinLabel: "Мін.",
+                lifespanAvgLabel: "Середнє",
+                lifespanMaxLabel: "Макс.",
+                maidenFlightLabel: "Перший політ",
+                latestFlightLabel: "Останній політ",
+                droneLifespanLabel: "Термін служби",
                 manageFleetLink: "Керувати флотом",
                 statBatteriesTrackedLabel: "Відстежувані батареї",
                 powerPacksLabel: "Блоки живлення",
@@ -1262,6 +1298,13 @@
                 totalMissionsLabel: "Total de missões",
                 statActiveAirframesLabel: "Aeronaves ativas",
                 fleetSizeLabel: "Tamanho da frota",
+                fleetLifespanTitle: "Tempo de vida da frota",
+                lifespanMinLabel: "Mín.",
+                lifespanAvgLabel: "Média",
+                lifespanMaxLabel: "Máx.",
+                maidenFlightLabel: "Primeiro voo",
+                latestFlightLabel: "Último voo",
+                droneLifespanLabel: "Tempo de vida",
                 manageFleetLink: "Gerenciar frota",
                 statBatteriesTrackedLabel: "Baterias monitoradas",
                 powerPacksLabel: "Pacotes de energia",
@@ -1873,6 +1916,85 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
+        // Returns a drone's maiden (earliest) and latest flight start times as
+        // Date objects, or null if it has no logged flights with a start time.
+        function getDroneFlightSpan(droneId) {
+            const times = state.flights
+                .filter(f => f.droneId === droneId && f.startTime)
+                .map(f => new Date(f.startTime))
+                .filter(d => !isNaN(d.getTime()));
+            if (times.length === 0) return null;
+            return {
+                maiden: new Date(Math.min(...times.map(d => d.getTime()))),
+                latest: new Date(Math.max(...times.map(d => d.getTime())))
+            };
+        }
+
+        function addMonths(date, n) {
+            const d = new Date(date.getTime());
+            d.setMonth(d.getMonth() + n);
+            return d;
+        }
+
+        // Breaks an exact span between two real dates into calendar-accurate
+        // years/months/days/hours/minutes. Steps fromDate forward whole
+        // months (via setMonth, which itself handles variable month lengths
+        // and leap years correctly) until one more month would overshoot
+        // toDate - that sidesteps the usual off-by-some-days bugs around
+        // short months entirely. What's left after that is always a safe
+        // sub-month span, broken into days/hours/minutes by plain ms math.
+        // Only used for a single drone's own maiden->latest span.
+        function calendarLifespanParts(fromDate, toDate) {
+            let totalMonths = 0;
+            while (addMonths(fromDate, totalMonths + 1) <= toDate) {
+                totalMonths++;
+            }
+            const y = Math.floor(totalMonths / 12);
+            const mo = totalMonths % 12;
+
+            const DAY = 24 * 60 * 60 * 1000, HOUR = 60 * 60 * 1000, MIN = 60 * 1000;
+            let remainingMs = toDate.getTime() - addMonths(fromDate, totalMonths).getTime();
+            const d = Math.floor(remainingMs / DAY); remainingMs -= d * DAY;
+            const h = Math.floor(remainingMs / HOUR); remainingMs -= h * HOUR;
+            const mi = Math.round(remainingMs / MIN);
+
+            return { y, mo, d, h, mi };
+        }
+
+        // Joins non-zero y/mo/d/h/mi parts into "1y 3m 25d 3h 45m" style text,
+        // omitting any unit that's zero; falls back to "0m" if the whole span
+        // rounds to nothing.
+        function formatLifespanParts(parts) {
+            const out = [];
+            if (parts.y > 0) out.push(parts.y + 'y');
+            if (parts.mo > 0) out.push(parts.mo + 'm');
+            if (parts.d > 0) out.push(parts.d + 'd');
+            if (parts.h > 0) out.push(parts.h + 'h');
+            if (parts.mi > 0) out.push(parts.mi + 'm');
+            return out.length ? out.join(' ') : '0m';
+        }
+
+        function formatCalendarLifespan(fromDate, toDate) {
+            if (toDate <= fromDate) return '0m';
+            return formatLifespanParts(calendarLifespanParts(fromDate, toDate));
+        }
+
+        // Breaks a plain duration (milliseconds, not anchored to real dates -
+        // e.g. an average across several drones) into the same y/mo/d/h/mi
+        // units using fixed average lengths (365.25-day year, 1/12 of that per
+        // month), since there's no single real calendar span to walk.
+        function formatApproxDuration(ms) {
+            if (!(ms > 0)) return '0m';
+            const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR, YEAR = 365.25 * DAY, MONTH = YEAR / 12;
+            let remaining = ms;
+            const y = Math.floor(remaining / YEAR); remaining -= y * YEAR;
+            const mo = Math.floor(remaining / MONTH); remaining -= mo * MONTH;
+            const d = Math.floor(remaining / DAY); remaining -= d * DAY;
+            const h = Math.floor(remaining / HOUR); remaining -= h * HOUR;
+            const mi = Math.round(remaining / MIN);
+            return formatLifespanParts({ y, mo, d, h, mi });
+        }
+
         function renderAll() {
             renderDashboardStats();
             renderFlightTables();
@@ -1904,6 +2026,36 @@
                 const total = state.drones.length || 1;
                 const pct = Math.round((readyCount / total) * 100);
                 readinessElem.textContent = t('readyStatusFormat', { pct });
+            }
+
+            // Fleet-wide lifespan (maiden -> latest flight per drone). Drones
+            // with no logged flights have no span and are left out entirely;
+            // a drone with exactly one flight contributes a 0-length span.
+            const droneSpans = state.drones
+                .map(d => getDroneFlightSpan(d.id))
+                .filter(span => span !== null)
+                .map(span => ({ span, ms: span.latest.getTime() - span.maiden.getTime() }));
+            const minEl = document.getElementById('statLifespanMin');
+            const avgEl = document.getElementById('statLifespanAvg');
+            const maxEl = document.getElementById('statLifespanMax');
+            if (minEl && avgEl && maxEl) {
+                if (droneSpans.length === 0) {
+                    minEl.textContent = avgEl.textContent = maxEl.textContent = '–';
+                } else {
+                    // Min/Max each belong to one real drone, so format them from
+                    // that drone's actual maiden/latest dates - the same exact
+                    // calendar math its own card uses - rather than converting
+                    // through a flattened ms duration and back, which could
+                    // show a different-looking value for the same span.
+                    // Average has no single real span to anchor to, so it's
+                    // necessarily an approximation.
+                    const minEntry = droneSpans.reduce((a, b) => (b.ms < a.ms ? b : a));
+                    const maxEntry = droneSpans.reduce((a, b) => (b.ms > a.ms ? b : a));
+                    const avgMs = droneSpans.reduce((sum, x) => sum + x.ms, 0) / droneSpans.length;
+                    minEl.textContent = formatCalendarLifespan(minEntry.span.maiden, minEntry.span.latest);
+                    maxEl.textContent = formatCalendarLifespan(maxEntry.span.maiden, maxEntry.span.latest);
+                    avgEl.textContent = formatApproxDuration(avgMs);
+                }
             }
         }
 
@@ -2182,6 +2334,11 @@
                         `;
                     }).join('');
 
+                    const span = getDroneFlightSpan(drone.id);
+                    const maidenText = span ? escapeHtml(formatDateTimeLocal(span.maiden).replace('T', ' ')) : '–';
+                    const latestText = span ? escapeHtml(formatDateTimeLocal(span.latest).replace('T', ' ')) : '–';
+                    const lifespanText = span ? formatCalendarLifespan(span.maiden, span.latest) : '–';
+
                     const body = document.createElement('div');
                     body.className = 'px-4 pb-4 space-y-4';
                     body.innerHTML = `
@@ -2193,6 +2350,18 @@
                             <div>
                                 <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('statLoggedFlightsLabel')}</span>
                                 <span class="text-sm font-extrabold text-white font-mono">${tCount('fleetFlightCount', flightCount)}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('maidenFlightLabel')}</span>
+                                <span class="text-xs font-bold text-slate-300 font-mono">${maidenText}</span>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('latestFlightLabel')}</span>
+                                <span class="text-xs font-bold text-slate-300 font-mono">${latestText}</span>
+                            </div>
+                            <div class="col-span-2">
+                                <span class="text-[10px] uppercase text-slate-500 font-semibold block">${t('droneLifespanLabel')}</span>
+                                <span class="text-sm font-extrabold text-indigo-400 font-mono">${lifespanText}</span>
                             </div>
                             ${customStatsHTML}
                         </div>
