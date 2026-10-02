@@ -1916,18 +1916,35 @@
             return `${year}-${month}-${day}T${hours}:${minutes}`;
         }
 
-        // Returns a drone's maiden (earliest) and latest flight start times as
-        // Date objects, or null if it has no logged flights with a start time.
+        // Returns a drone's lifespan as Date objects: maiden is the start time
+        // of its earliest-starting flight, latest is the end time of its
+        // most-recently-started flight (falling back to start+duration, then
+        // to just its start time, if that flight has no recorded end time).
+        // Using the latest flight's own end - not its start - means a drone
+        // with only one flight still gets a real span (that flight's own
+        // duration) instead of a 0-length one. Returns null if the drone has
+        // no logged flights with a start time at all.
         function getDroneFlightSpan(droneId) {
-            const times = state.flights
+            const withStart = state.flights
                 .filter(f => f.droneId === droneId && f.startTime)
-                .map(f => new Date(f.startTime))
-                .filter(d => !isNaN(d.getTime()));
-            if (times.length === 0) return null;
-            return {
-                maiden: new Date(Math.min(...times.map(d => d.getTime()))),
-                latest: new Date(Math.max(...times.map(d => d.getTime())))
-            };
+                .map(f => ({ flight: f, start: new Date(f.startTime) }))
+                .filter(x => !isNaN(x.start.getTime()));
+            if (withStart.length === 0) return null;
+
+            const earliest = withStart.reduce((a, b) => (b.start < a.start ? b : a));
+            const mostRecent = withStart.reduce((a, b) => (b.start > a.start ? b : a));
+
+            let latestEnd;
+            const end = mostRecent.flight.endTime ? new Date(mostRecent.flight.endTime) : null;
+            if (end && !isNaN(end.getTime())) {
+                latestEnd = end;
+            } else if (mostRecent.flight.duration) {
+                latestEnd = new Date(mostRecent.start.getTime() + mostRecent.flight.duration * 60000);
+            } else {
+                latestEnd = mostRecent.start;
+            }
+
+            return { maiden: earliest.start, latest: latestEnd };
         }
 
         function addMonths(date, n) {
