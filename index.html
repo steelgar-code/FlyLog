@@ -497,12 +497,13 @@
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
                     <i class="fa-solid fa-plane-departure text-cyan-400"></i>
-                    <h3 class="font-bold text-white text-base" data-i18n="logFlightModalTitle">Log UAV Flight</h3>
+                    <h3 id="modalLogFlightTitle" class="font-bold text-white text-base" data-i18n="logFlightModalTitle">Log UAV Flight</h3>
                 </div>
                 <button id="closeLogFlightModal" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
 
             <form id="formLogFlight" class="space-y-4 text-xs">
+                <input type="hidden" id="flightEditId">
                 <div>
                     <label for="flightDrone" class="block text-slate-400 mb-1 font-medium"><span data-i18n="colAirframeDrone">Airframe / Drone</span> <span class="text-rose-400">*</span></label>
                     <div class="flex gap-2">
@@ -550,6 +551,11 @@
                         <label for="flightDuration" class="block text-slate-400 mb-1" data-i18n="durationMinutesLabel">Duration (Minutes)</label>
                         <input type="number" step="0.1" id="flightDuration" min="0" placeholder="e.g. 25" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
+
+                    <p id="flightTimeOrderError" class="hidden text-rose-400 text-[11px] flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span data-i18n="flightTimeOrderErrorMsg">Flight End must be after Flight Start.</span>
+                    </p>
                 </div>
 
                 <div>
@@ -913,12 +919,14 @@
                 batteryInventorySubtitle: "Track charge cycles, total flight duration, and health status",
                 addBatteryBtn: "Battery",
                 logFlightModalTitle: "Log UAV Flight",
+                editFlightLogTitle: "Edit Flight Log",
                 closeAriaLabel: "Close",
                 addNewDroneTitle: "Add New Drone",
                 batteryLabelOptional: "Battery Label (Optional)",
                 noneStandardOption: "-- None / Standard --",
                 addNewBatteryTitle: "Add New Battery",
                 autoCalcLabel: "Auto-Calculator (Fill any 2 fields to derive the 3rd)",
+                flightTimeOrderErrorMsg: "Flight End must be after Flight Start.",
                 flightStartTimeLabel: "Flight Start Time",
                 flightEndTimeLabel: "Flight End Time",
                 durationMinutesLabel: "Duration (Minutes)",
@@ -982,6 +990,8 @@
                 toastStorageFull: "Could not save changes locally — storage may be full",
                 toastSelectAirframe: "Please select an airframe",
                 toastFlightLogged: "Flight logged successfully!",
+                toastFlightUpdated: "Flight log updated!",
+                toastFlightTimeOrderInvalid: "Flight End must be after Flight Start — fix the times before saving.",
                 toastDroneUpdated: "Drone updated!",
                 toastDroneAdded: "New drone added!",
                 toastBatteryUpdated: "Battery updated!",
@@ -1011,6 +1021,7 @@
                 confirmRemoveFieldMsg: "Remove custom field \"{label}\"? Its recorded values will be deleted from all flight logs. This cannot be undone.",
                 toastFieldRemoved: "Field \"{label}\" removed",
                 toastFieldRemovedGeneric: "Field removed",
+                editLogTitle: "Edit Log",
                 deleteLogTitle: "Delete Log",
                 uavPlatformFallback: "UAV Platform",
                 editActionBtn: "Edit",
@@ -1098,12 +1109,14 @@
                 batteryInventorySubtitle: "Відстежуйте цикли заряду, загальний час польоту та стан справності",
                 addBatteryBtn: "Батарея",
                 logFlightModalTitle: "Записати політ БПЛА",
+                editFlightLogTitle: "Редагувати запис польоту",
                 closeAriaLabel: "Закрити",
                 addNewDroneTitle: "Додати новий дрон",
                 batteryLabelOptional: "Мітка батареї (необов'язково)",
                 noneStandardOption: "-- Немає / Стандартна --",
                 addNewBatteryTitle: "Додати нову батарею",
                 autoCalcLabel: "Автокалькулятор (заповніть будь-які 2 поля, щоб визначити третє)",
+                flightTimeOrderErrorMsg: "Час завершення польоту має бути пізніше за час початку.",
                 flightStartTimeLabel: "Час початку польоту",
                 flightEndTimeLabel: "Час завершення польоту",
                 durationMinutesLabel: "Тривалість (хвилини)",
@@ -1171,6 +1184,8 @@
                 toastStorageFull: "Не вдалося зберегти зміни локально — сховище може бути заповнене",
                 toastSelectAirframe: "Будь ласка, виберіть апарат",
                 toastFlightLogged: "Політ успішно записано!",
+                toastFlightUpdated: "Запис польоту оновлено!",
+                toastFlightTimeOrderInvalid: "Час завершення польоту має бути пізніше за час початку — виправте час перед збереженням.",
                 toastDroneUpdated: "Дрон оновлено!",
                 toastDroneAdded: "Новий дрон додано!",
                 toastBatteryUpdated: "Батарею оновлено!",
@@ -1202,6 +1217,7 @@
                 confirmRemoveFieldMsg: "Видалити користувацьке поле «{label}»? Його записані значення буде видалено з усіх польотів. Цю дію неможливо скасувати.",
                 toastFieldRemoved: "Поле «{label}» видалено",
                 toastFieldRemovedGeneric: "Поле видалено",
+                editLogTitle: "Редагувати запис",
                 deleteLogTitle: "Видалити запис",
                 uavPlatformFallback: "Платформа БПЛА",
                 editActionBtn: "Редагувати",
@@ -1289,12 +1305,14 @@
                 batteryInventorySubtitle: "Acompanhe ciclos de carga, tempo total de voo e estado de saúde",
                 addBatteryBtn: "Bateria",
                 logFlightModalTitle: "Registrar voo de drone",
+                editFlightLogTitle: "Editar registro de voo",
                 closeAriaLabel: "Fechar",
                 addNewDroneTitle: "Adicionar novo drone",
                 batteryLabelOptional: "Etiqueta da bateria (opcional)",
                 noneStandardOption: "-- Nenhuma / Padrão --",
                 addNewBatteryTitle: "Adicionar nova bateria",
                 autoCalcLabel: "Calculadora automática (preencha 2 campos quaisquer para derivar o 3º)",
+                flightTimeOrderErrorMsg: "O fim do voo deve ser depois do início do voo.",
                 flightStartTimeLabel: "Hora de início do voo",
                 flightEndTimeLabel: "Hora de término do voo",
                 durationMinutesLabel: "Duração (minutos)",
@@ -1358,6 +1376,8 @@
                 toastStorageFull: "Não foi possível salvar as alterações localmente — o armazenamento pode estar cheio",
                 toastSelectAirframe: "Selecione uma aeronave",
                 toastFlightLogged: "Voo registrado com sucesso!",
+                toastFlightUpdated: "Registro de voo atualizado!",
+                toastFlightTimeOrderInvalid: "O fim do voo deve ser depois do início do voo — corrija os horários antes de salvar.",
                 toastDroneUpdated: "Drone atualizado!",
                 toastDroneAdded: "Novo drone adicionado!",
                 toastBatteryUpdated: "Bateria atualizada!",
@@ -1387,6 +1407,7 @@
                 confirmRemoveFieldMsg: "Remover o campo personalizado \"{label}\"? Seus valores registrados serão excluídos de todos os registros de voo. Esta ação não pode ser desfeita.",
                 toastFieldRemoved: "Campo \"{label}\" removido",
                 toastFieldRemovedGeneric: "Campo removido",
+                editLogTitle: "Editar registro",
                 deleteLogTitle: "Excluir registro",
                 uavPlatformFallback: "Plataforma de drone",
                 editActionBtn: "Editar",
@@ -1783,6 +1804,7 @@
             const startInput = document.getElementById('flightStartTime');
             const endInput = document.getElementById('flightEndTime');
             const durationInput = document.getElementById('flightDuration');
+            const timeOrderError = document.getElementById('flightTimeOrderError');
 
             function fieldValue(field) {
                 if (field === flightTimeDerivedField) return null;
@@ -1799,11 +1821,25 @@
                 const endTimeVal = fieldValue('end');
                 const durationVal = fieldValue('duration');
 
+                // End <= Start can only happen from the user's own direct input
+                // in both fields - a derived value is always on the correct side
+                // of its anchor by construction, so masking it here (via
+                // fieldValue) never hides a real contradiction.
+                const invalidOrder = !!(startTimeVal && endTimeVal && endTimeVal <= startTimeVal);
+                if (timeOrderError) timeOrderError.classList.toggle('hidden', !invalidOrder);
+
                 if (lastChanged === 'start' || lastChanged === 'end') {
                     if (startTimeVal && endTimeVal && endTimeVal > startTimeVal) {
                         const diffMins = (endTimeVal - startTimeVal) / (1000 * 60);
                         durationInput.value = diffMins.toFixed(1);
                         flightTimeDerivedField = 'duration';
+                    } else if (invalidOrder) {
+                        // Times contradict each other - don't leave a stale
+                        // calculated duration sitting next to them looking valid.
+                        if (flightTimeDerivedField === 'duration') {
+                            durationInput.value = '';
+                            flightTimeDerivedField = null;
+                        }
                     } else if (startTimeVal && durationVal && durationVal > 0 && lastChanged === 'start') {
                         const derivedEnd = new Date(startTimeVal.getTime() + durationVal * 60000);
                         endInput.value = formatDateTimeLocal(derivedEnd);
@@ -1975,6 +2011,7 @@
                             <td class="py-3 px-3 text-slate-300 max-w-xs truncate">${escapeHtml(f.notes) || '-'}</td>
                             ${renderCustomFieldCells(f)}
                             <td class="py-3 px-3 text-right">
+                                <button onclick="editFlight('${f.id}')" class="p-1 text-slate-500 hover:text-cyan-400 transition" title="${t('editLogTitle')}"><i class="fa-solid fa-pen-to-square"></i></button>
                                 <button onclick="confirmDeleteFlight('${f.id}')" class="p-1 text-slate-500 hover:text-rose-400 transition" title="${t('deleteLogTitle')}"><i class="fa-solid fa-trash-can"></i></button>
                             </td>
                         `;
@@ -2361,6 +2398,7 @@
             // Submit Log Flight Form
             document.getElementById('formLogFlight').addEventListener('submit', (e) => {
                 e.preventDefault();
+                const editId = document.getElementById('flightEditId').value;
                 const droneId = document.getElementById('flightDrone').value;
                 const batteryId = document.getElementById('flightBattery').value;
                 const startTime = document.getElementById('flightStartTime').value;
@@ -2376,22 +2414,49 @@
                     return;
                 }
 
-                state.flights.unshift({
-                    id: Date.now().toString(),
-                    droneId: drone.id,
-                    droneName: drone.name,
-                    batteryId: battery ? battery.id : null,
-                    batteryName: battery ? battery.name : '',
-                    startTime,
-                    endTime,
-                    duration,
-                    notes,
-                    customValues: collectCustomFieldValues()
-                });
+                // Final guard to match the live check in setupAutoCalculator: never
+                // silently save a flight whose times contradict each other (this
+                // was the root cause of flights saving with no duration at all).
+                if (startTime && endTime && new Date(endTime) <= new Date(startTime)) {
+                    showToast(t('toastFlightTimeOrderInvalid'), 'warning');
+                    document.getElementById('flightTimeOrderError')?.classList.remove('hidden');
+                    document.getElementById('flightEndTime').focus();
+                    return;
+                }
+
+                const customValues = collectCustomFieldValues();
+
+                if (editId) {
+                    const flight = state.flights.find(f => f.id === editId);
+                    if (flight) {
+                        flight.droneId = drone.id;
+                        flight.droneName = drone.name;
+                        flight.batteryId = battery ? battery.id : null;
+                        flight.batteryName = battery ? battery.name : '';
+                        flight.startTime = startTime;
+                        flight.endTime = endTime;
+                        flight.duration = duration;
+                        flight.notes = notes;
+                        flight.customValues = customValues;
+                    }
+                } else {
+                    state.flights.unshift({
+                        id: Date.now().toString(),
+                        droneId: drone.id,
+                        droneName: drone.name,
+                        batteryId: battery ? battery.id : null,
+                        batteryName: battery ? battery.name : '',
+                        startTime,
+                        endTime,
+                        duration,
+                        notes,
+                        customValues
+                    });
+                }
 
                 closeLogFlightModal();
                 renderAll();
-                showToast(t('toastFlightLogged'), 'success');
+                showToast(editId ? t('toastFlightUpdated') : t('toastFlightLogged'), 'success');
             });
 
             // Submit Drone Form
@@ -2541,12 +2606,39 @@
             });
         }
 
-        function openLogFlightModal() {
+        function openLogFlightModal(flight = null) {
             document.getElementById('formLogFlight').reset();
             flightTimeDerivedField = null;
+            document.getElementById('flightTimeOrderError')?.classList.add('hidden');
             populateDropdowns();
             renderCustomFieldInputs();
+
+            if (flight) {
+                document.getElementById('modalLogFlightTitle').textContent = t('editFlightLogTitle');
+                document.getElementById('flightEditId').value = flight.id;
+                document.getElementById('flightDrone').value = flight.droneId || '';
+                document.getElementById('flightBattery').value = flight.batteryId || '';
+                document.getElementById('flightStartTime').value = flight.startTime || '';
+                document.getElementById('flightEndTime').value = flight.endTime || '';
+                document.getElementById('flightDuration').value = flight.duration ? flight.duration : '';
+                document.getElementById('flightNotes').value = flight.notes || '';
+                state.customFields.forEach(field => {
+                    const el = document.getElementById(`cf-${field.id}`);
+                    if (el && flight.customValues && flight.customValues[field.id] !== undefined) {
+                        el.value = flight.customValues[field.id];
+                    }
+                });
+            } else {
+                document.getElementById('modalLogFlightTitle').textContent = t('logFlightModalTitle');
+                document.getElementById('flightEditId').value = '';
+            }
+
             document.getElementById('modalLogFlight').classList.remove('hidden');
+        }
+
+        function editFlight(id) {
+            const flight = state.flights.find(f => f.id === id);
+            if (flight) openLogFlightModal(flight);
         }
 
         // Builds one input per custom field inside the Log Flight modal. Called
