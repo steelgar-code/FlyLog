@@ -304,24 +304,26 @@
                 </div>
 
                 <!-- Fleet Lifespan Summary: span between each drone's maiden and latest flight -->
-                <div class="p-5 rounded-2xl bg-slate-900 border border-slate-800/80 space-y-4">
-                    <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                <div class="px-4 py-3 rounded-2xl bg-slate-900 border border-slate-800/80 flex items-center flex-wrap gap-x-4 gap-y-2">
+                    <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2 shrink-0">
                         <i class="fa-solid fa-hourglass-half text-indigo-400"></i>
                         <span data-i18n="fleetLifespanTitle">Fleet Lifespan</span>
                     </h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanMinLabel">Min</span>
-                            <span id="statLifespanMin" class="text-sm font-extrabold text-emerald-400 font-mono">–</span>
-                        </div>
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanAvgLabel">Average</span>
-                            <span id="statLifespanAvg" class="text-sm font-extrabold text-cyan-400 font-mono">–</span>
-                        </div>
-                        <div class="p-3 bg-slate-950 rounded-xl border border-slate-800/80 text-center">
-                            <span class="text-[10px] uppercase text-slate-500 font-semibold block" data-i18n="lifespanMaxLabel">Max</span>
-                            <span id="statLifespanMax" class="text-sm font-extrabold text-amber-400 font-mono">–</span>
-                        </div>
+                    <div class="flex items-center flex-wrap gap-3 text-xs">
+                        <span class="flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold" data-i18n="lifespanMinLabel">Min</span>
+                            <span id="statLifespanMin" class="font-bold text-emerald-400 font-mono">–</span>
+                        </span>
+                        <span class="h-3 w-px bg-slate-700"></span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold" data-i18n="lifespanAvgLabel">Average</span>
+                            <span id="statLifespanAvg" class="font-bold text-cyan-400 font-mono">–</span>
+                        </span>
+                        <span class="h-3 w-px bg-slate-700"></span>
+                        <span class="flex items-center gap-1.5">
+                            <span class="text-[10px] uppercase text-slate-500 font-semibold" data-i18n="lifespanMaxLabel">Max</span>
+                            <span id="statLifespanMax" class="font-bold text-amber-400 font-mono">–</span>
+                        </span>
                     </div>
                 </div>
 
