@@ -1,11 +1,14 @@
 # FlyLog
 
+[Українська](README.uk.md) · [Português (BR)](README.pt-BR.md)
+
 Offline-first flight log and fleet manager for drone/UAV pilots. Track flights, manage your fleet and battery inventory, and log custom data — all running locally in your browser, no backend required.
 
 ## Features
 
-- **Flight logging** — record flights per airframe with start time, end time, and duration; fill in any two and the third is calculated automatically.
+- **Flight logging** — record flights per airframe with start time, end time, and duration; fill in any two and the third is calculated automatically. Edit any saved flight log entry later to fix a mistake.
 - **Fleet & battery management** — drones and battery packs live in collapsible cards (collapsed by default, expand for full stats and actions), each with fully custom statuses you can add, remove, and recolor to match your workflow.
+- **Drone lifespan tracking** — expand a drone's card to see its Maiden Flight and Latest Flight dates/times, plus the Lifespan between them (e.g. "45m" or "1y 3m 25d 3h 45m"). The dashboard's Fleet Lifespan panel rolls this up into fleet-wide Min, Average, and Max lifespan stats (drones with no flights yet are excluded).
 - **Reorder your equipment** — drag and drop, or use the up/down buttons, to arrange drones and batteries in the order you use them. New items go to the top, and that same order drives the Airframe/Battery dropdowns on the Log Flight form.
 - **Custom fields** — define your own flight log fields to capture whatever data matters to your operation, each with its own trend chart on the dashboard.
 - **Charts & stats** — the Flight Hours Trend chart switches between Weekly (8 weeks), Monthly (6 months), and Last 30 Days views.
