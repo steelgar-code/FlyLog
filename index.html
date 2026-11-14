@@ -1185,6 +1185,7 @@
                 toastImportFailed: "Import failed, nothing was changed",
                 toastStorageRecovered: "Some saved data could not be read. A copy of it was kept on this device, and FlyLog started with default data. Restore a backup to get your data back.",
                 toastStorageRecoveryFailed: "Some saved data could not be read or copied. FlyLog will not save changes in this session so the damaged data is not overwritten.",
+                toastSaveBlocked: "Not saved: saving is off for this session to protect damaged data. Export a backup to keep this change.",
                 toastFieldExists: "A field named \"{label}\" already exists",
                 toastFieldAdded: "Field \"{label}\" added",
                 confirmRemoveFieldMsg: "Remove custom field \"{label}\"? Its recorded values will be deleted from all flight logs. This cannot be undone.",
@@ -1427,6 +1428,7 @@
                 toastImportFailed: "Не вдалося імпортувати, нічого не змінено",
                 toastStorageRecovered: "Частину збережених даних не вдалося прочитати. Їхню копію збережено на цьому пристрої, а FlyLog запущено з типовими даними. Відновіть резервну копію, щоб повернути свої дані.",
                 toastStorageRecoveryFailed: "Частину збережених даних не вдалося ні прочитати, ні скопіювати. У цьому сеансі FlyLog не зберігатиме зміни, щоб не перезаписати пошкоджені дані.",
+                toastSaveBlocked: "Не збережено: у цьому сеансі збереження вимкнено, щоб захистити пошкоджені дані. Експортуйте резервну копію, щоб не втратити цю зміну.",
                 toastFieldExists: "Поле з назвою «{label}» вже існує",
                 toastFieldAdded: "Поле «{label}» додано",
                 confirmRemoveFieldMsg: "Видалити користувацьке поле «{label}»? Його записані значення буде видалено з усіх польотів. Цю дію неможливо скасувати.",
@@ -1662,6 +1664,7 @@
                 toastImportFailed: "Falha na importação, nada foi alterado",
                 toastStorageRecovered: "Alguns dados salvos não puderam ser lidos. Uma cópia deles foi mantida neste dispositivo e o FlyLog iniciou com os dados padrão. Restaure um backup para recuperar seus dados.",
                 toastStorageRecoveryFailed: "Alguns dados salvos não puderam ser lidos nem copiados. O FlyLog não salvará alterações nesta sessão para não sobrescrever os dados danificados.",
+                toastSaveBlocked: "Não salvo: o salvamento está desligado nesta sessão para proteger dados danificados. Exporte um backup para manter esta alteração.",
                 toastFieldExists: "Já existe um campo chamado \"{label}\"",
                 toastFieldAdded: "Campo \"{label}\" adicionado",
                 confirmRemoveFieldMsg: "Remover o campo personalizado \"{label}\"? Seus valores registrados serão excluídos de todos os registros de voo. Esta ação não pode ser desfeita.",
@@ -1980,8 +1983,30 @@
         // fails (typically the quota), put back every key already written. The
         // keys on disk therefore always describe one consistent state.
         // Returns true when everything was saved.
-        function saveState() {
-            if (storageWritesBlocked) return false;
+        //
+        // While saving is blocked (see preserveCorruptValue) nothing is written,
+        // and every change the pilot makes is answered with a warning: renderAll
+        // runs this on every change but also on plain re-renders, so the warning
+        // fires only when the data differs from what the last attempt held (the
+        // first call, at startup, just records the baseline; the startup toast
+        // already explains), and a burst of changes (dragging a colour picker)
+        // while the warning is still on screen does not stack more of them.
+        // `quiet` is for callers that report the failure themselves; it does
+        // not move the baseline, so their roll-back re-render stays silent too.
+        let lastBlockedSaveSnapshot = null;
+        let blockedSaveToast = null;
+        function saveState({ quiet = false } = {}) {
+            if (storageWritesBlocked) {
+                if (quiet) return false;
+                const snapshot = JSON.stringify([state.flights, state.drones, state.batteries,
+                    state.droneStatuses, state.droneStatusColors, state.customFields]);
+                if (lastBlockedSaveSnapshot !== null && snapshot !== lastBlockedSaveSnapshot &&
+                    !(blockedSaveToast && blockedSaveToast.isConnected)) {
+                    blockedSaveToast = showToast(t('toastSaveBlocked'), 'warning');
+                }
+                lastBlockedSaveSnapshot = snapshot;
+                return false;
+            }
             const written = [];
             try {
                 const entries = [
@@ -2568,9 +2593,13 @@
         const DEFAULT_STATUS_COLORS = { Ready: '#34d399', Maintenance: '#fbbf24' };
         const FALLBACK_STATUS_COLOR = '#94a3b8';
 
+        // Only an own '#rrggbb' entry counts: the value goes into a style and a
+        // value attribute, and a status named e.g. "constructor" must not pick
+        // up an inherited Object property.
+        const HEX_COLOR_RE = /^#[0-9a-fA-F]{6}$/;
         function getStatusColor(name) {
-            if (state.droneStatusColors && state.droneStatusColors[name]) return state.droneStatusColors[name];
-            return DEFAULT_STATUS_COLORS[name] || FALLBACK_STATUS_COLOR;
+            const own = (map) => map && Object.prototype.hasOwnProperty.call(map, name) && HEX_COLOR_RE.test(map[name]) ? map[name] : null;
+            return own(state.droneStatusColors) || own(DEFAULT_STATUS_COLORS) || FALLBACK_STATUS_COLOR;
         }
 
         // Builds an inline style (rather than fixed Tailwind classes) since the
@@ -3845,7 +3874,26 @@
         function newImportId(prefix) {
             return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
         }
-        // A usable id (string, or a number as older data had), else null.
+        // Record ids end up inside inline handlers and attributes when lists
+        // render (onclick="editFlight('${id}')", option values, element ids), so
+        // an id from a backup file is stored only if it has this shape: the
+        // app's own ids ('1', 'uav-1', 'cf-1700000000000-abc12', Date.now())
+        // all do. Anything else gets a fresh id; the file's value is used only
+        // as a lookup key to keep flights linked to their drone/battery/field.
+        const SAFE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+        function isSafeId(v) {
+            return typeof v === 'string' && SAFE_ID_RE.test(v);
+        }
+        // The id to store for a record whose lookup key in the file is `key`:
+        // the key itself when it is safe and unused, else a fresh unused id.
+        function safeImportId(key, prefix, used) {
+            let id = isSafeId(key) && !used.has(key) ? key : newImportId(prefix);
+            while (used.has(id)) id = newImportId(prefix);
+            used.add(id);
+            return id;
+        }
+        // A usable lookup key (string, or a number as older data had), else
+        // null. NOT safe to store or render: see safeImportId.
         function importId(v) {
             if (typeof v === 'string' && v) return v;
             if (typeof v === 'number' && Number.isFinite(v)) return String(v);
@@ -3906,6 +3954,7 @@
             }
 
             const fields = [];
+            const fieldIds = new Set();
             const fieldByKey = new Map();
             const fieldByOldId = new Map();
             (Array.isArray(data.customFields) ? data.customFields : []).forEach(cf => {
@@ -3914,8 +3963,7 @@
                 const key = label.toLowerCase();
                 let field = fieldByKey.get(key);
                 if (!field) {
-                    let id = importId(cf.id);
-                    if (!id || fields.some(f => f.id === id)) id = newImportId('cf');
+                    const id = safeImportId(importId(cf.id), 'cf', fieldIds);
                     field = { id, label, type: cf.type === 'number' ? 'number' : 'text' };
                     fields.push(field);
                     fieldByKey.set(key, field);
@@ -3933,13 +3981,12 @@
                     const rest = extra(item);
                     if (!rest) { malformed++; return; }
                     const oldId = importId(item.id);
-                    const id = oldId && !usedIds.has(oldId) ? oldId : newImportId(prefix);
-                    usedIds.add(id);
+                    const id = safeImportId(oldId, prefix, usedIds);
                     const rec = Object.assign({ id, name: item.name.trim() }, rest);
                     out.push(rec);
                     if (oldId && !byOldId.has(oldId)) byOldId.set(oldId, rec);
                 });
-                return { list: out, byOldId };
+                return { list: out, byOldId, ids: usedIds };
             };
 
             const drones = parseAsset(data.drones, 'uav', d => {
@@ -3967,6 +4014,21 @@
                     colors[statusByKey.get(importNameKey(name)) || name.trim()] = hex;
                 });
             }
+
+            // A reference to an airframe/battery that is not in the backup
+            // (deleted before the export) keeps its id when that id is safe;
+            // otherwise every flight with that reference shares one fresh id.
+            const danglingIds = new Map();
+            const danglingRef = (key, prefix, assets) => {
+                if (!key) return null;
+                const mapKey = prefix + ':' + key;
+                if (!danglingIds.has(mapKey)) {
+                    let id = isSafeId(key) && !assets.ids.has(key) ? key : newImportId(prefix);
+                    while (assets.ids.has(id)) id = newImportId(prefix);
+                    danglingIds.set(mapKey, id);
+                }
+                return danglingIds.get(mapKey);
+            };
 
             const flights = [];
             const flightIds = new Set();
@@ -4002,14 +4064,12 @@
                     const v = importFieldValue(field.type, f.customValues[oldFieldId]);
                     if (v !== undefined) customValues.set(field, v);
                 });
-                let id = importId(f.id);
-                if (!id || flightIds.has(id)) id = newImportId('flt');
-                flightIds.add(id);
+                const id = safeImportId(importId(f.id), 'flt', flightIds);
                 flights.push({
                     id,
-                    drone, droneOldId,
+                    drone, droneRefId: drone ? null : danglingRef(droneOldId, 'uav', drones),
                     droneName: droneName || (drone ? drone.name : t('unknownAirframeFallback')),
-                    battery, batteryOldId,
+                    battery, batteryRefId: battery ? null : danglingRef(batteryOldId, 'bat', batteries),
                     batteryName: batteryName || (battery ? battery.name : ''),
                     startTime, endTime, duration, notes, customValues
                 });
@@ -4051,8 +4111,8 @@
                 // A flight whose airframe/battery is not in the backup (deleted
                 // before the export) keeps its original id reference, as it had.
                 flights: p.flights.map(f => importFlightRecord(f,
-                    f.drone ? f.drone.id : f.droneOldId,
-                    f.battery ? f.battery.id : f.batteryOldId,
+                    f.drone ? f.drone.id : f.droneRefId,
+                    f.battery ? f.battery.id : f.batteryRefId,
                     field => field.id, field => field.type))
             };
             return { next, added: next.drones.length + next.batteries.length + next.flights.length, skipped: 0 };
@@ -4157,7 +4217,7 @@
             const previous = {};
             keys.forEach(k => { previous[k] = state[k]; });
             keys.forEach(k => { state[k] = next[k]; });
-            if (!saveState()) {
+            if (!saveState({ quiet: true })) {
                 keys.forEach(k => { state[k] = previous[k]; });
                 renderAll();
                 showToast(t('toastImportFailed'), 'warning');
@@ -4258,6 +4318,7 @@
                 toast.classList.add('opacity-0', 'translate-y-2');
                 setTimeout(() => toast.remove(), 300);
             }, 3000);
+            return toast;
         }
     </script>
 </body>

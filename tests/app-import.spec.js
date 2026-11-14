@@ -1,6 +1,6 @@
 const {
   test, expect, CONTEXT_OPTIONS, KEYS, makeFixture, openApp, ready, store, goTo, logFlight,
-  fleetCard, flightRow, downloadText,
+  fleetCard, batteryCard, flightRow, editBtn, deleteBtn, expand, confirmDialog, downloadText,
 } = require('./support/app');
 
 test.use(CONTEXT_OPTIONS);
@@ -321,4 +321,202 @@ test.describe('validation', () => {
       await expect(fleetCard(page, 'Echo Wing').locator('select')).toHaveValue('Calibration');
     });
   }
+});
+
+// A backup is untrusted: record ids are rendered into inline handlers
+// (onclick="editFlight('<id>')"), option values and element ids, so an id
+// that is not plainly safe must be replaced on import, in either mode.
+test.describe('hostile ids in a backup', () => {
+  const SAFE_ID = /^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$/;
+  const P = 'window.__pwned=1';
+  // Short: every status is an option in every card's select, which sizes the card header.
+  const STATUS_HTML = '<i>"s"</i>';
+  const ids = {
+    droneQuote: `x');${P};//`,
+    droneHtml: `"><img src=x onerror="${P}">`,
+    droneJs: `javascript:${P}`,
+    droneLong: 'd'.repeat(5000),
+    batQuote: `');${P};('`,
+    batHtml: `<b>"x"</b><script>${P}</script>`,
+    fieldNum: `cf');${P};//`,
+    fieldText: `"><svg onload="${P}">`,
+    ghostDrone: `ghost');${P};//`,
+    ghostBat: `<ghost onmouseover="${P}">`,
+  };
+  const t0 = new Date(Date.UTC(2026, 0, 5, 10, 0));
+  const at = (h) => `2026-01-05T${String(h).padStart(2, '0')}:00`;
+  const fl = (o) => ({ startTime: at(o.h), endTime: at(o.h + 1), duration: 60, batteryId: null, batteryName: '', customValues: {}, ...o, h: undefined });
+
+  function hostileBackup() {
+    return {
+      app: 'FlyLog Pro', backupVersion: 1, exportedAt: t0.toISOString(),
+      droneStatuses: ['Ready', STATUS_HTML, 'constructor'],
+      droneStatusColors: { constructor: '#123456', Ready: `red;background:url(javascript:${P})` },
+      customFields: [
+        { id: ids.fieldNum, label: 'Inj Num', type: 'number' },
+        { id: ids.fieldText, label: 'Inj Text', type: 'text' },
+        { id: [1], label: 'Inj Arr', type: 'text' },
+        { id: '__proto__', label: 'Inj Proto', type: 'text' },
+      ],
+      drones: [
+        { id: ids.droneQuote, name: 'Inj Quote', model: '', flightHours: 1, status: 'Ready' },
+        { id: ids.droneHtml, name: 'Inj Html', model: `<img src=x onerror="${P}">`, flightHours: 0, status: STATUS_HTML },
+        { id: ids.droneJs, name: 'Inj Js', model: '', flightHours: 0, status: 'constructor' },
+        { id: ids.droneLong, name: 'Inj Long', model: '', flightHours: 0, status: 'Ready' },
+        { id: { a: 1 }, name: 'Inj Obj', model: '', flightHours: 0, status: 'Ready' },
+        { id: 1.5, name: 'Inj Float', model: '', flightHours: 0, status: 'Ready' },
+      ],
+      batteries: [
+        { id: ids.batQuote, name: 'Inj Bat Quote', cycles: 1, flightHours: 0, status: 'Good' },
+        { id: ids.batHtml, name: 'Inj Bat Html', cycles: 2, flightHours: 0, status: 'Warning' },
+        { id: true, name: 'Inj Bat Bool', cycles: 3, flightHours: 0, status: 'Good' },
+      ],
+      flights: [
+        fl({ id: `f');${P};//`, h: 1, droneId: ids.droneQuote, droneName: 'Inj Quote', batteryId: ids.batQuote, batteryName: 'Inj Bat Quote',
+          notes: 'Inj flight one', customValues: { [ids.fieldNum]: 7, [ids.fieldText]: 'hello', ['__proto__']: 'x' } }),
+        fl({ id: `"><img src=x onerror="${P}">`, h: 3, droneId: ids.droneHtml, droneName: 'Inj Html', batteryId: ids.batHtml, batteryName: 'Inj Bat Html',
+          notes: `Inj flight two <img src=x onerror="${P}">`, customValues: { [ids.fieldText]: `<img src=x onerror="${P}">` } }),
+        fl({ id: 'f'.repeat(5000), h: 5, droneId: ids.droneLong, droneName: 'Inj Long', notes: 'Inj flight three' }),
+        fl({ id: { x: 1 }, h: 7, droneId: ids.droneJs, droneName: 'Inj Js', notes: 'Inj flight four' }),
+        fl({ id: `javascript:${P}`, h: 9, droneId: ids.ghostDrone, droneName: 'Ghost Drone', batteryId: ids.ghostBat, batteryName: 'Ghost Pack', notes: 'Inj flight five' }),
+        fl({ id: '<script>', h: 11, droneId: ids.ghostDrone, droneName: 'Ghost Drone', batteryId: ids.ghostBat, batteryName: 'Ghost Pack', notes: 'Inj flight six' }),
+      ],
+    };
+  }
+
+  async function expectNotPwned(page, dialogs) {
+    expect(await page.evaluate(() => window.__pwned)).toBeUndefined();
+    expect(dialogs).toEqual([]);
+  }
+
+  for (const mode of ['replace', 'merge']) {
+    test(`${mode}: no id from the file can run script; every stored id is safe and records stay linked and usable`, async ({ page }) => {
+      const dialogs = [];
+      page.on('dialog', (d) => { dialogs.push(d.message()); d.dismiss(); });
+      await openApp(page, { fixture: makeFixture(now) });
+      await importAs(page, hostileBackup(), mode);
+      await expect(toasts(page)).toContainText(mode === 'replace' ? 'Backup restored' : 'Merge complete');
+
+      const d = await data(page);
+      const allIds = [
+        ...d.drones.map((x) => x.id), ...d.batteries.map((x) => x.id), ...d.customFields.map((x) => x.id),
+        ...d.flights.map((x) => x.id),
+        ...d.flights.map((x) => x.droneId).filter((x) => x != null),
+        ...d.flights.map((x) => x.batteryId).filter((x) => x != null),
+        ...d.flights.flatMap((x) => Object.keys(x.customValues || {})),
+      ];
+      for (const id of allIds) expect(id, `stored id ${JSON.stringify(id).slice(0, 80)}`).toMatch(SAFE_ID);
+      for (const list of [d.drones, d.batteries, d.flights, d.customFields]) {
+        expect(new Set(list.map((x) => x.id)).size).toBe(list.length);
+      }
+
+      const byName = (list, name) => list.find((x) => x.name === name || x.label === name);
+      const flightBy = (notes) => d.flights.find((f) => f.notes.startsWith(notes));
+      const one = flightBy('Inj flight one');
+      expect(one.droneId).toBe(byName(d.drones, 'Inj Quote').id);
+      expect(one.batteryId).toBe(byName(d.batteries, 'Inj Bat Quote').id);
+      expect(one.customValues).toEqual({
+        [byName(d.customFields, 'Inj Num').id]: 7, [byName(d.customFields, 'Inj Text').id]: 'hello', [byName(d.customFields, 'Inj Proto').id]: 'x',
+      });
+      const two = flightBy('Inj flight two');
+      expect(two.droneId).toBe(byName(d.drones, 'Inj Html').id);
+      expect(two.batteryId).toBe(byName(d.batteries, 'Inj Bat Html').id);
+      expect(two.customValues).toEqual({ [byName(d.customFields, 'Inj Text').id]: `<img src=x onerror="${P}">` });
+      expect(flightBy('Inj flight three').droneId).toBe(byName(d.drones, 'Inj Long').id);
+      expect(flightBy('Inj flight four').droneId).toBe(byName(d.drones, 'Inj Js').id);
+      for (const name of ['Inj Arr', 'Inj Proto']) expect(byName(d.customFields, name)).toBeTruthy();
+      for (const name of ['Inj Obj', 'Inj Float']) expect(byName(d.drones, name)).toBeTruthy();
+      expect(byName(d.batteries, 'Inj Bat Bool')).toBeTruthy();
+      // Statuses keep their names; a colour that is not '#rrggbb' is dropped.
+      expect(d.droneStatusColors.Ready).not.toBe(hostileBackup().droneStatusColors.Ready);
+
+      const five = flightBy('Inj flight five');
+      const six = flightBy('Inj flight six');
+      if (mode === 'replace') {
+        // References to items not in the backup are kept, under one safe id each.
+        expect(five.droneId).toBeTruthy();
+        expect(six.droneId).toBe(five.droneId);
+        expect(six.batteryId).toBe(five.batteryId);
+        expect(d.drones.some((x) => x.id === five.droneId)).toBe(false);
+        expect(d.batteries.some((x) => x.id === five.batteryId)).toBe(false);
+      }
+      expect(five.droneName).toBe('Ghost Drone');
+
+      // Render every list that carries ids, then use the injected records' buttons.
+      await goTo(page, 'flights');
+      await expect(flightRow(page, 'Inj flight one')).toHaveCount(1);
+      await expect(flightRow(page, 'Inj flight two')).toContainText('<img src=x');
+      await editBtn(flightRow(page, 'Inj flight one')).click();
+      await expect(page.locator('#modalLogFlight')).toBeVisible();
+      await expect(page.locator('#flightDrone')).toHaveValue(one.droneId);
+      await expect(page.locator('#flightBattery')).toHaveValue(one.batteryId);
+      await expect(page.locator('#customFieldsFormContainer').getByLabel('Inj Num', { exact: true })).toHaveValue('7');
+      await expect(page.locator('#customFieldsFormContainer').getByLabel('Inj Text', { exact: true })).toHaveValue('hello');
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#modalLogFlight')).toBeHidden();
+      if (mode === 'replace') {
+        await editBtn(flightRow(page, 'Inj flight five')).click();
+        await expect(page.locator('#flightDrone')).toHaveValue(five.droneId);
+        await page.keyboard.press('Escape');
+        await expect(page.locator('#modalLogFlight')).toBeHidden();
+      }
+      await deleteBtn(flightRow(page, 'Inj flight two')).click();
+      await confirmDialog(page);
+      await expect(flightRow(page, 'Inj flight two')).toHaveCount(0);
+      expect((await store(page, 'flights')).some((f) => f.notes.startsWith('Inj flight two'))).toBe(false);
+
+      await goTo(page, 'fleet');
+      for (const name of ['Inj Quote', 'Inj Html', 'Inj Js', 'Inj Long', 'Inj Obj', 'Inj Float']) await expand(fleetCard(page, name));
+      await fleetCard(page, 'Inj Quote').locator('[data-edit]').click();
+      await expect(page.locator('#modalDrone')).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#modalDrone')).toBeHidden();
+      await fleetCard(page, 'Inj Html').locator('[data-delete]').click();
+      await confirmDialog(page);
+      await expect(fleetCard(page, 'Inj Html')).toHaveCount(0);
+
+      await goTo(page, 'batteries');
+      await expand(batteryCard(page, 'Inj Bat Quote'));
+      await batteryCard(page, 'Inj Bat Quote').locator('[data-delete]').click();
+      await confirmDialog(page);
+      await expect(batteryCard(page, 'Inj Bat Quote')).toHaveCount(0);
+
+      await page.evaluate(() => openStatusesModal());
+      await expect(page.locator('#modalManageStatuses')).toBeVisible();
+      await expect(page.locator('#statusListContainer')).toContainText(STATUS_HTML);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#modalManageStatuses')).toBeHidden();
+      await page.evaluate(() => openFieldsModal());
+      const fieldRow = page.locator('#fieldsListContainer > div').filter({ hasText: 'Inj Text' });
+      await fieldRow.locator('button').click();
+      await confirmDialog(page);
+      await expect(fieldRow).toHaveCount(0);
+      expect((await store(page, 'customFields')).some((f) => f.label === 'Inj Text')).toBe(false);
+      await page.keyboard.press('Escape');
+      await expect(page.locator('#modalManageFields')).toBeHidden();
+
+      await goTo(page, 'dashboard');
+      await expectNotPwned(page, dialogs);
+    });
+  }
+
+  test('ids the app itself generates, and the demo ids, survive Replace unchanged', async ({ page }) => {
+    const fx = makeFixture(now);
+    fx.drones[0].id = 'uav-1';
+    fx.drones[1].id = 'uav-1700000000000';
+    fx.batteries[0].id = 'bat-1700000000000';
+    fx.customFields = [{ id: 'cf-1700000000000-ab12c', label: 'Points', type: 'number' }, { id: 'cf-1700000000000-x9y8z7w', label: 'Pilot', type: 'text' }];
+    fx.flights.forEach((f) => {
+      if (f.droneId === 'uav-alpha') f.droneId = 'uav-1';
+      if (f.droneId === 'uav-bravo') f.droneId = 'uav-1700000000000';
+      if (f.batteryId === 'bat-a') f.batteryId = 'bat-1700000000000';
+    });
+    fx.flights[0].id = '1';
+    fx.flights[1].id = '1700000000000';
+    fx.flights[2].id = 'flt-1700000000000-k3j4h5g';
+    fx.flights[0].customValues = { 'cf-1700000000000-ab12c': 2, 'cf-1700000000000-x9y8z7w': 'Sam' };
+    await openApp(page, { fixture: makeFixture(now) });
+    await importAs(page, backupOf(fx), 'replace');
+    expect(await data(page)).toEqual(fx);
+  });
 });

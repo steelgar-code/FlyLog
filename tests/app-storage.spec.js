@@ -149,4 +149,57 @@ test.describe('damaged stored data', () => {
     await logFlight(page, { drone: 'Alpha Quad', start: '2026-01-02T03:04', duration: 15, notes: 'Not saved' });
     expect(await page.evaluate(() => localStorage.getItem('flylog_flights'))).toBe('not json');
   });
+
+  test('while saving is off, each change warns that it was not saved, but plain re-renders do not', async ({ page }) => {
+    await openApp(page);
+    await page.evaluate(() => localStorage.setItem('flylog_flights', 'not json'));
+    await page.addInitScript(() => {
+      const real = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (String(key).startsWith('flylog_corrupt_')) throw new DOMException('Quota exceeded (test stub)', 'QuotaExceededError');
+        return real.call(this, key, value);
+      };
+    });
+    await page.reload();
+    await ready(page);
+    const notSaved = page.locator('#toastContainer > div', { hasText: 'Not saved: saving is off for this session' });
+    await expect(toasts(page)).toContainText('FlyLog will not save changes in this session');
+    await expect(notSaved).toHaveCount(0);
+
+    await logFlight(page, { drone: 'Alpha Quad', start: '2026-01-02T03:04', duration: 15, notes: 'First unsaved' });
+    await expect(notSaved).toHaveCount(1);
+    await expect(notSaved).toHaveCount(0); // it fades out on its own
+
+    // A re-render with nothing changed (language switch back and forth) says nothing.
+    await page.locator('.lang-select').first().selectOption('uk');
+    await page.locator('.lang-select').first().selectOption('en');
+    await page.evaluate(() => renderAll());
+    await expect(page.locator('#toastContainer > div', { hasText: /Не збережено|Not saved/ })).toHaveCount(0);
+
+    await logFlight(page, { drone: 'Alpha Quad', start: '2026-01-03T03:04', duration: 15, notes: 'Second unsaved' });
+    await expect(notSaved).toHaveCount(1);
+    expect(await page.evaluate(() => localStorage.getItem('flylog_flights'))).toBe('not json');
+  });
+
+  test('while saving is off, a failed import reports only that it failed', async ({ page }) => {
+    await openApp(page);
+    await page.evaluate(() => localStorage.setItem('flylog_flights', 'not json'));
+    await page.addInitScript(() => {
+      const real = Storage.prototype.setItem;
+      Storage.prototype.setItem = function (key, value) {
+        if (String(key).startsWith('flylog_corrupt_')) throw new DOMException('Quota exceeded (test stub)', 'QuotaExceededError');
+        return real.call(this, key, value);
+      };
+    });
+    await page.reload();
+    await ready(page);
+    const before = await page.locator('#statTotalFlights').textContent();
+    const fx = makeFixture(now);
+    const backup = { app: 'FlyLog Pro', backupVersion: 1, ...fx };
+    await page.locator('#importFileInput').setInputFiles({ name: 'b.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(backup)) });
+    await page.locator('#btnImportReplace').click();
+    await expect(toasts(page)).toContainText('Import failed, nothing was changed');
+    await expect(page.locator('#toastContainer > div', { hasText: 'Not saved' })).toHaveCount(0);
+    await expect(page.locator('#statTotalFlights')).toHaveText(before);
+  });
 });
