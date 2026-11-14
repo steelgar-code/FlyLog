@@ -436,8 +436,8 @@
 
                     <!-- Quick Presets -->
                     <div class="flex items-center gap-1 text-[11px] shrink-0">
-                        <button type="button" id="btnPreset7d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">7D</button>
-                        <button type="button" id="btnPreset30d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono">30D</button>
+                        <button type="button" id="btnPreset7d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="preset7dBtn">7D</button>
+                        <button type="button" id="btnPreset30d" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="preset30dBtn">30D</button>
                         <button type="button" id="btnPresetMonth" class="px-2 py-1.5 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition font-mono" data-i18n="presetThisMonth">This Month</button>
                     </div>
 
@@ -583,7 +583,7 @@
 
                     <div>
                         <label for="flightDuration" class="block text-slate-400 mb-1" data-i18n="durationMinutesLabel">Duration (Minutes)</label>
-                        <input type="number" step="0.1" id="flightDuration" min="0" placeholder="e.g. 25" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
+                        <input type="number" step="0.1" id="flightDuration" min="0" placeholder="e.g. 25" data-i18n-placeholder="flightDurationPlaceholder" class="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-200 focus:border-cyan-500 font-mono">
                     </div>
 
                     <p id="flightTimeOrderError" class="hidden text-rose-400 text-[11px] flex items-center gap-1.5">
@@ -950,6 +950,16 @@
                 maidenFlightLabel: "Maiden Flight",
                 latestFlightLabel: "Latest Flight",
                 droneLifespanLabel: "Lifespan",
+                unitYear: "y",
+                unitMonth: "mo",
+                unitDay: "d",
+                unitHour: "h",
+                unitMinute: "m",
+                chartMonthlyAggregates: "Monthly Aggregates",
+                chartFlightHoursDataset: "Flight Hours",
+                preset7dBtn: "7D",
+                preset30dBtn: "30D",
+                flightDurationPlaceholder: "e.g. 25",
                 manageFleetLink: "Manage Fleet",
                 statBatteriesTrackedLabel: "Batteries Tracked",
                 powerPacksLabel: "Power Packs",
@@ -1162,6 +1172,16 @@
                 maidenFlightLabel: "Перший політ",
                 latestFlightLabel: "Останній політ",
                 droneLifespanLabel: "Термін служби",
+                unitYear: "р",
+                unitMonth: "міс",
+                unitDay: "д",
+                unitHour: "год",
+                unitMinute: "хв",
+                chartMonthlyAggregates: "Місячні підсумки",
+                chartFlightHoursDataset: "Години польоту",
+                preset7dBtn: "7д",
+                preset30dBtn: "30д",
+                flightDurationPlaceholder: "напр. 25",
                 manageFleetLink: "Керувати флотом",
                 statBatteriesTrackedLabel: "Відстежувані батареї",
                 powerPacksLabel: "Блоки живлення",
@@ -1380,6 +1400,16 @@
                 maidenFlightLabel: "Primeiro voo",
                 latestFlightLabel: "Último voo",
                 droneLifespanLabel: "Tempo de vida",
+                unitYear: "a",
+                unitMonth: "mes",
+                unitDay: "d",
+                unitHour: "h",
+                unitMinute: "min",
+                chartMonthlyAggregates: "Totais mensais",
+                chartFlightHoursDataset: "Horas de voo",
+                preset7dBtn: "7d",
+                preset30dBtn: "30d",
+                flightDurationPlaceholder: "ex.: 25",
                 manageFleetLink: "Gerenciar frota",
                 statBatteriesTrackedLabel: "Baterias monitoradas",
                 powerPacksLabel: "Pacotes de energia",
@@ -2104,47 +2134,58 @@
             return d;
         }
 
+        function addDays(date, n) {
+            const d = new Date(date.getTime());
+            d.setDate(d.getDate() + n);
+            return d;
+        }
+
         // Breaks an exact span between two real dates into calendar-accurate
         // years/months/days/hours/minutes. Steps fromDate forward whole
         // months (via setMonth, which itself handles variable month lengths
         // and leap years correctly) until one more month would overshoot
         // toDate - that sidesteps the usual off-by-some-days bugs around
         // short months entirely. What's left after that is always a safe
-        // sub-month span, broken into days/hours/minutes by plain ms math.
+        // sub-month span, broken into whole local calendar days (stepped with
+        // setDate, so DST changes can't skew them) plus hours/minutes.
         // Only used for a single drone's own maiden->latest span.
         function calendarLifespanParts(fromDate, toDate) {
+            const HOUR = 60 * 60 * 1000, MIN = 60 * 1000;
+            // Round the whole span to whole minutes first, then split, so 59.5
+            // min never shows as "60m" (and 23h 59.6m rolls into the next day).
+            const end = new Date(fromDate.getTime() + Math.round((toDate.getTime() - fromDate.getTime()) / MIN) * MIN);
             let totalMonths = 0;
-            while (addMonths(fromDate, totalMonths + 1) <= toDate) {
-                totalMonths++;
-            }
+            while (addMonths(fromDate, totalMonths + 1) <= end) totalMonths++;
             const y = Math.floor(totalMonths / 12);
             const mo = totalMonths % 12;
-
-            const DAY = 24 * 60 * 60 * 1000, HOUR = 60 * 60 * 1000, MIN = 60 * 1000;
-            // Round to whole minutes first, then split, so 59.5 min never shows as "60m".
-            let remainingMs = Math.round((toDate.getTime() - addMonths(fromDate, totalMonths).getTime()) / MIN) * MIN;
-            const d = Math.floor(remainingMs / DAY); remainingMs -= d * DAY;
+            // Whole local calendar days (setDate keeps the wall-clock time, so a
+            // daylight-saving change never turns 29 days into "28d 23h").
+            const monthStart = addMonths(fromDate, totalMonths);
+            let d = 0;
+            while (addDays(monthStart, d + 1) <= end) d++;
+            let remainingMs = end.getTime() - addDays(monthStart, d).getTime();
             const h = Math.floor(remainingMs / HOUR); remainingMs -= h * HOUR;
-            const mi = remainingMs / MIN;
+            const mi = Math.round(remainingMs / MIN);
 
             return { y, mo, d, h, mi };
         }
 
-        // Joins non-zero y/mo/d/h/mi parts into "1y 3m 25d 3h 45m" style text,
+        // Joins non-zero y/mo/d/h/mi parts into "1y 3mo 25d 3h 45m" style text
+        // (unit labels are translated),
         // omitting any unit that's zero; falls back to "0m" if the whole span
         // rounds to nothing.
         function formatLifespanParts(parts) {
             const out = [];
-            if (parts.y > 0) out.push(parts.y + 'y');
-            if (parts.mo > 0) out.push(parts.mo + 'm');
-            if (parts.d > 0) out.push(parts.d + 'd');
-            if (parts.h > 0) out.push(parts.h + 'h');
-            if (parts.mi > 0) out.push(parts.mi + 'm');
-            return out.length ? out.join(' ') : '0m';
+            if (parts.y > 0) out.push(parts.y + t('unitYear'));
+            if (parts.mo > 0) out.push(parts.mo + t('unitMonth'));
+            if (parts.d > 0) out.push(parts.d + t('unitDay'));
+            if (parts.h > 0) out.push(parts.h + t('unitHour'));
+            if (parts.mi > 0) out.push(parts.mi + t('unitMinute'));
+            return out.length ? out.join(' ') : '0' + t('unitMinute');
         }
 
         function formatCalendarLifespan(fromDate, toDate) {
-            if (toDate <= fromDate) return '0m';
+            if (toDate <= fromDate) return '0' + t('unitMinute');
             return formatLifespanParts(calendarLifespanParts(fromDate, toDate));
         }
 
@@ -2153,7 +2194,7 @@
         // units using fixed average lengths (365.25-day year, 1/12 of that per
         // month), since there's no single real calendar span to walk.
         function formatApproxDuration(ms) {
-            if (!(ms > 0)) return '0m';
+            if (!(ms > 0)) return '0' + t('unitMinute');
             const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR, YEAR = 365.25 * DAY, MONTH = YEAR / 12;
             let remaining = Math.round(ms / MIN) * MIN;
             const y = Math.floor(remaining / YEAR); remaining -= y * YEAR;
@@ -2182,7 +2223,7 @@
             const hours = Math.floor(roundedMins / 60);
             const mins = roundedMins % 60;
 
-            document.getElementById('statTotalHours').textContent = `${hours}h ${mins}m`;
+            document.getElementById('statTotalHours').textContent = `${hours}${t('unitHour')} ${mins}${t('unitMinute')}`;
             document.getElementById('statTotalFlights').textContent = state.flights.length;
             document.getElementById('statActiveDrones').textContent = state.drones.filter(d => d.status === 'Ready').length;
             document.getElementById('statBatteriesCount').textContent = state.batteries.length;
@@ -3261,15 +3302,22 @@
             showToast(t('toastFlightDeleted'), 'info');
         }
 
+        // Chart axis labels follow the selected language via Intl.
+        function shortMonthLabel(d) {
+            return d.toLocaleDateString(currentLang, { month: 'short' });
+        }
+        function shortDateLabel(d) {
+            return d.toLocaleDateString(currentLang, { month: 'numeric', day: 'numeric' });
+        }
+
         // Build the last 6 months' total logged flight hours from real flight
         // data (grouped by the flight's start-time month), oldest to newest.
         function computeMonthlyHours() {
-            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             const now = new Date();
             const buckets = [];
             for (let i = 5; i >= 0; i--) {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: monthNames[d.getMonth()], mins: 0 });
+                buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: shortMonthLabel(d), mins: 0 });
             }
             state.flights.forEach(f => {
                 if (!f.startTime) return;
@@ -3285,7 +3333,6 @@
 
         // Last 8 calendar weeks (Mon-Sun), current week included and last.
         function computeWeeklyHours() {
-            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             const now = new Date();
             const dayOfWeek = (now.getDay() + 6) % 7; // 0=Mon .. 6=Sun
             const thisWeekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - dayOfWeek);
@@ -3293,7 +3340,7 @@
             for (let i = 7; i >= 0; i--) {
                 const start = new Date(thisWeekStart.getFullYear(), thisWeekStart.getMonth(), thisWeekStart.getDate() - i * 7);
                 const end = new Date(start.getFullYear(), start.getMonth(), start.getDate() + 7);
-                buckets.push({ start, end, label: `${monthNames[start.getMonth()]} ${start.getDate()}`, mins: 0 });
+                buckets.push({ start, end, label: start.toLocaleDateString(currentLang, { month: 'short', day: 'numeric' }), mins: 0 });
             }
             state.flights.forEach(f => {
                 if (!f.startTime) return;
@@ -3316,7 +3363,7 @@
                 const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
                 buckets.push({
                     key: formatLocalDate(d),
-                    label: `${d.getMonth() + 1}/${d.getDate()}`,
+                    label: shortDateLabel(d),
                     mins: 0
                 });
             }
@@ -3341,12 +3388,11 @@
         // Same monthly-bucket approach as computeMonthlyHours, but summing one
         // numeric custom field's values (across all aircraft) instead of duration.
         function computeMonthlyCustomFieldTotal(fieldId) {
-            const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
             const now = new Date();
             const buckets = [];
             for (let i = 5; i >= 0; i--) {
                 const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: monthNames[d.getMonth()], total: 0 });
+                buckets.push({ key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`, label: shortMonthLabel(d), total: 0 });
             }
             state.flights.forEach(f => {
                 if (!f.startTime) return;
@@ -3394,7 +3440,7 @@
                                 <i class="fa-solid fa-chart-line text-teal-400"></i>
                                 <span id="cfChartLabel-${field.id}"></span>
                             </h3>
-                            <span class="text-xs text-slate-400">Monthly Aggregates</span>
+                            <span class="text-xs text-slate-400" data-i18n="chartMonthlyAggregates">${t('chartMonthlyAggregates')}</span>
                         </div>
                         <div class="h-64"><canvas id="cfChart-${field.id}"></canvas></div>
                     `;
@@ -3485,7 +3531,7 @@
                         data: {
                             labels: trend.labels,
                             datasets: [{
-                                label: 'Flight Hours',
+                                label: t('chartFlightHoursDataset'),
                                 data: trend.data,
                                 borderColor: '#38bdf8',
                                 backgroundColor: 'rgba(56, 189, 248, 0.1)',
@@ -3546,6 +3592,7 @@
                     const trend = computeHoursTrend(dashboardHoursPeriod);
                     chartHoursInstance.data.labels = trend.labels;
                     chartHoursInstance.data.datasets[0].data = trend.data;
+                    chartHoursInstance.data.datasets[0].label = t('chartFlightHoursDataset');
                     chartHoursInstance.update();
                 }
             } catch (err) {
