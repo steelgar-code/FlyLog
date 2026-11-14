@@ -3,7 +3,8 @@ const { expect } = require('@playwright/test');
 
 async function expectStyledApp(page) {
   // Tailwind applied: `hidden` => display none, html bg-slate-950, bg-brand-600 from tailwind.config.
-  const hidden = await page.locator('#offlineBadge').evaluate((el) => getComputedStyle(el).display);
+  // (#importFileInput is always hidden; #offlineBadge shows whenever the browser is offline.)
+  const hidden = await page.locator('#importFileInput').evaluate((el) => getComputedStyle(el).display);
   expect(hidden).toBe('none');
   const htmlBg = await page.evaluate(() => getComputedStyle(document.documentElement).backgroundColor);
   expect(htmlBg).toBe('rgb(2, 6, 23)');

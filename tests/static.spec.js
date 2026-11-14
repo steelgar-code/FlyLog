@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const { test, expect } = require('@playwright/test');
+const { swLists } = require('./support/sw-lists');
 
 const ROOT = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
@@ -44,6 +45,31 @@ test('every icon in manifest.json exists', () => {
   expect(manifest.icons.length).toBeGreaterThan(0);
   const missing = manifest.icons.map((i) => i.src).filter((s) => !fs.existsSync(path.join(ROOT, s)));
   expect(missing).toEqual([]);
+});
+
+// Local path relative to the repo root, without ./, query or hash.
+const norm = (u) => path.posix.normalize(u.split(/[?#]/)[0]).replace(/^\.\//, '');
+
+test('sw.js caches every local file the app needs, and only files that exist', () => {
+  const { shell, vendor } = swLists();
+  const listed = [...shell, ...vendor].map(norm);
+  const needed = new Set(['index.html']);
+  for (const r of references()) if (isLocal(r.url)) needed.add(norm(r.url));
+  const manifest = JSON.parse(fs.readFileSync(path.join(ROOT, 'manifest.json'), 'utf8'));
+  for (const icon of manifest.icons) needed.add(norm(icon.src));
+  // Fonts the vendored CSS loads: its woff2 sources (every supported browser
+  // picks woff2; the .ttf fallback it also names is deliberately not vendored).
+  for (const css of [...needed].filter((f) => f.endsWith('.css'))) {
+    const text = fs.readFileSync(path.join(ROOT, css), 'utf8');
+    for (const [, url] of text.matchAll(/url\(\s*["']?([^"')]+\.woff2)["']?\s*\)/g)) {
+      needed.add(norm(path.posix.join(path.posix.dirname(css), url)));
+    }
+  }
+  expect(needed).toContain('vendor/fontawesome-free-6.4.0/webfonts/fa-solid-900.woff2');
+  expect([...needed].filter((f) => !listed.includes(f))).toEqual([]);
+  expect(listed.filter((f) => !fs.existsSync(path.join(ROOT, f)))).toEqual([]);
+  // Versioned vendor files are never re-fetched once cached, so every one must carry a version.
+  expect(vendor.filter((u) => !/\d+\.\d+\.\d+/.test(u))).toEqual([]);
 });
 
 test('en, uk and pt-BR have identical translation keys', async ({ page }) => {

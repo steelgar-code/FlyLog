@@ -211,6 +211,13 @@
                         <span data-i18n="airframeReadinessLabel">Airframe Readiness</span>
                         <span id="sidebarReadiness" class="text-cyan-400">100% Ready</span>
                     </div>
+                    <div class="flex items-center justify-between gap-2 text-slate-400">
+                        <span data-i18n="offlineStatusLabel">Offline Use</span>
+                        <span id="offlineStatus" data-state="preparing" title="Saving the app on this device for offline use…" data-i18n-title="offlineStatusPreparingTitle" class="flex items-center gap-1 text-amber-300 text-right">
+                            <span id="offlineStatusDot" class="w-2 h-2 rounded-full shrink-0 bg-amber-400 animate-pulse"></span>
+                            <span id="offlineStatusText" data-i18n="offlineStatusPreparing">Preparing…</span>
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -791,6 +798,25 @@
         </button>
     </div>
 
+    <!-- Update Available Prompt (top, so it never covers the install prompt or toasts) -->
+    <div id="updatePrompt" role="status" aria-live="polite" class="hidden fixed top-20 left-4 right-4 sm:left-auto sm:right-4 sm:w-80 z-50 p-4 rounded-xl border border-slate-700 bg-slate-900 shadow-xl">
+        <button type="button" id="updateDismiss" aria-label="Dismiss" data-i18n-aria-label="updateDismissAriaLabel" class="absolute top-2 right-2 p-1.5 rounded-lg text-slate-500 hover:text-slate-300 hover:bg-slate-800 transition">
+            <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+        <div class="flex items-start gap-3 pr-6">
+            <div class="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-cyan-950/60 border border-cyan-800/40 text-cyan-400">
+                <i class="fa-solid fa-rotate"></i>
+            </div>
+            <div>
+                <h3 class="text-sm font-semibold text-slate-100" data-i18n="updatePromptTitle">Update available</h3>
+                <p class="text-xs text-slate-400 mt-0.5" data-i18n="updatePromptDesc">A new version of FlyLog is ready. Reload to start using it.</p>
+            </div>
+        </div>
+        <button type="button" id="updateReloadBtn" class="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition shadow-lg shadow-brand-600/20">
+            <i class="fa-solid fa-rotate-right"></i> <span data-i18n="updateReloadBtn">Reload</span>
+        </button>
+    </div>
+
     <script>
         // Initial Mock Data
         const INITIAL_DRONES = [
@@ -877,6 +903,20 @@
         const translations = {
             en: {
                 offlineBadge: "Offline — changes saved locally",
+                offlineStatusLabel: "Offline Use",
+                offlineStatusReady: "Ready",
+                offlineStatusReadyTitle: "The full app is saved on this device and opens without internet.",
+                offlineStatusPreparing: "Preparing…",
+                offlineStatusPreparingTitle: "Saving the app on this device for offline use…",
+                offlineStatusLocal: "Local files",
+                offlineStatusLocalTitle: "Opened from files on this device, so it already works without internet.",
+                offlineStatusUnsupported: "Not available",
+                offlineStatusUnsupportedTitle: "This browser can't save the app for offline use. Your data is still stored on this device.",
+                toastOfflineReady: "FlyLog is ready to work offline.",
+                updatePromptTitle: "Update available",
+                updatePromptDesc: "A new version of FlyLog is ready. Reload to start using it.",
+                updateReloadBtn: "Reload",
+                updateDismissAriaLabel: "Dismiss",
                 weatherClearSky: "Clear Sky",
                 unitKnots: "kts",
                 unitSats: "Sats",
@@ -1074,6 +1114,20 @@
             },
             uk: {
                 offlineBadge: "Офлайн — зміни збережено локально",
+                offlineStatusLabel: "Офлайн-режим",
+                offlineStatusReady: "Готово",
+                offlineStatusReadyTitle: "Увесь застосунок збережено на цьому пристрої — він відкривається без інтернету.",
+                offlineStatusPreparing: "Підготовка…",
+                offlineStatusPreparingTitle: "Застосунок зберігається на цьому пристрої для роботи офлайн…",
+                offlineStatusLocal: "Локальні файли",
+                offlineStatusLocalTitle: "Відкрито з файлів на цьому пристрої, тож застосунок і так працює без інтернету.",
+                offlineStatusUnsupported: "Недоступно",
+                offlineStatusUnsupportedTitle: "Цей браузер не може зберегти застосунок для роботи офлайн. Ваші дані все одно зберігаються на цьому пристрої.",
+                toastOfflineReady: "FlyLog готовий до роботи офлайн.",
+                updatePromptTitle: "Доступне оновлення",
+                updatePromptDesc: "Нова версія FlyLog готова. Перезавантажте сторінку, щоб почати нею користуватися.",
+                updateReloadBtn: "Перезавантажити",
+                updateDismissAriaLabel: "Закрити",
                 weatherClearSky: "Ясно",
                 unitKnots: "вузл.",
                 unitSats: "супутників",
@@ -1277,6 +1331,20 @@
             },
             "pt-BR": {
                 offlineBadge: "Offline — alterações salvas localmente",
+                offlineStatusLabel: "Uso offline",
+                offlineStatusReady: "Pronto",
+                offlineStatusReadyTitle: "O app completo está salvo neste dispositivo e abre sem internet.",
+                offlineStatusPreparing: "Preparando…",
+                offlineStatusPreparingTitle: "Salvando o app neste dispositivo para uso offline…",
+                offlineStatusLocal: "Arquivos locais",
+                offlineStatusLocalTitle: "Aberto a partir de arquivos neste dispositivo, então já funciona sem internet.",
+                offlineStatusUnsupported: "Indisponível",
+                offlineStatusUnsupportedTitle: "Este navegador não consegue salvar o app para uso offline. Seus dados continuam armazenados neste dispositivo.",
+                toastOfflineReady: "O FlyLog está pronto para funcionar offline.",
+                updatePromptTitle: "Atualização disponível",
+                updatePromptDesc: "Uma nova versão do FlyLog está pronta. Recarregue para começar a usá-la.",
+                updateReloadBtn: "Recarregar",
+                updateDismissAriaLabel: "Dispensar",
                 weatherClearSky: "Céu limpo",
                 unitKnots: "nós",
                 unitSats: "Sats",
@@ -1613,19 +1681,94 @@
             renderAll();
         });
 
-        // Register the offline service worker. This only works when the page is
-        // served over http(s) (e.g. a local server, or hosted) — browsers block
-        // service workers on file:// pages opened by double-click. The app's data
-        // layer (localStorage) works offline either way; this just also caches the
-        // Tailwind/FontAwesome/Chart.js assets so the UI itself loads with no
-        // network at all once it's been opened online at least once.
-        if ('serviceWorker' in navigator && (location.protocol === 'http:' || location.protocol === 'https:')) {
+        // ================= Offline support (service worker) =================
+        // sw.js caches the whole app so it starts with no network at all once it
+        // has been opened online once. Service workers only exist on http(s)
+        // pages: a file:// copy opened from disk already works offline because
+        // every file is local, and the data layer (localStorage) works either way.
+        //
+        // The sidebar's "Offline Use" line shows one of: ready (a worker is
+        // active, so the full app is cached), preparing (supported, not active
+        // yet), local (file://) or unsupported. When sw.js finds a changed
+        // index.html it posts 'flylog-update-ready'; a new worker taking over a
+        // page that already had one (controllerchange) also means a new version.
+        // Either way the update prompt offers a reload. A first-ever install
+        // has no previous controller, so it shows no prompt.
+        const OFFLINE_READY_NOTIFIED_KEY = 'flylog_offline_ready_notified';
+        const OFFLINE_STATUS_VIEW = {
+            ready: { text: 'offlineStatusReady', title: 'offlineStatusReadyTitle', color: 'text-emerald-400', dot: 'bg-emerald-400' },
+            preparing: { text: 'offlineStatusPreparing', title: 'offlineStatusPreparingTitle', color: 'text-amber-300', dot: 'bg-amber-400 animate-pulse' },
+            local: { text: 'offlineStatusLocal', title: 'offlineStatusLocalTitle', color: 'text-slate-300', dot: 'bg-slate-500' },
+            unsupported: { text: 'offlineStatusUnsupported', title: 'offlineStatusUnsupportedTitle', color: 'text-slate-300', dot: 'bg-slate-500' }
+        };
+        let swContainer = null;
+        try {
+            if ((location.protocol === 'http:' || location.protocol === 'https:') && 'serviceWorker' in navigator) {
+                swContainer = navigator.serviceWorker || null;
+            }
+        } catch (err) {}
+        const pageHadController = !!(swContainer && swContainer.controller);
+        let offlineState = location.protocol === 'file:' ? 'local' : (swContainer ? 'preparing' : 'unsupported');
+        const updatePromptEl = document.getElementById('updatePrompt');
+
+        function renderOfflineStatus() {
+            const wrap = document.getElementById('offlineStatus');
+            const dot = document.getElementById('offlineStatusDot');
+            const text = document.getElementById('offlineStatusText');
+            if (!wrap || !dot || !text) return;
+            const view = OFFLINE_STATUS_VIEW[offlineState];
+            wrap.dataset.state = offlineState;
+            wrap.className = `flex items-center gap-1 text-right ${view.color}`;
+            wrap.setAttribute('data-i18n-title', view.title);
+            wrap.setAttribute('title', t(view.title));
+            dot.className = `w-2 h-2 rounded-full shrink-0 ${view.dot}`;
+            text.setAttribute('data-i18n', view.text);
+            text.textContent = t(view.text);
+        }
+
+        function setOfflineState(next) {
+            if (offlineState === next) return renderOfflineStatus();
+            offlineState = next;
+            renderOfflineStatus();
+            if (next !== 'ready') return;
+            try {
+                if (localStorage.getItem(OFFLINE_READY_NOTIFIED_KEY) === '1') return;
+                localStorage.setItem(OFFLINE_READY_NOTIFIED_KEY, '1');
+            } catch (err) {
+                return; // can't remember it, so don't repeat the toast on every load
+            }
+            showToast(t('toastOfflineReady'), 'success');
+        }
+
+        function showUpdatePrompt() {
+            if (updatePromptEl) updatePromptEl.classList.remove('hidden');
+        }
+        document.getElementById('updateReloadBtn').addEventListener('click', () => window.location.reload());
+        document.getElementById('updateDismiss').addEventListener('click', () => updatePromptEl.classList.add('hidden'));
+
+        if (swContainer) {
+            // Listeners are attached during parsing, so messages the worker sends
+            // while this page is still loading are queued for them, not lost.
+            swContainer.addEventListener('message', (event) => {
+                if (event.data && event.data.type === 'flylog-update-ready') showUpdatePrompt();
+            });
+            swContainer.addEventListener('controllerchange', () => {
+                if (pageHadController) showUpdatePrompt();
+                setOfflineState('ready');
+            });
+            swContainer.ready.then(() => setOfflineState('ready')).catch(() => {});
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js').catch(err => {
-                    console.warn('FlyLog: service worker registration failed (offline asset caching unavailable).', err);
+                swContainer.register('./sw.js').catch(err => {
+                    console.warn('FlyLog: service worker registration failed (offline caching unavailable).', err);
+                    if (offlineState !== 'ready') setOfflineState('unsupported');
                 });
             });
+            // Back online after a stretch without signal: look for a new version.
+            window.addEventListener('online', () => {
+                if (swContainer.controller) swContainer.controller.postMessage({ type: 'flylog-check-update' });
+            });
         }
+        if (pageHadController) setOfflineState('ready'); else renderOfflineStatus();
 
         // ================= Install prompt =================
         // Captures the browser's native "install this PWA" prompt and shows our
