@@ -12,22 +12,28 @@ Diário de voo e gerenciador de frota offline-first para pilotos de drone/VANT. 
 - **Reordenar seu equipamento** — arraste e solte, ou use os botões de subir/descer, para organizar drones e baterias na ordem que você mais usa. Novos itens vão para o topo, e essa mesma ordem define os menus de Aeronave/Bateria no formulário de Registro de Voo.
 - **Campos personalizados** — defina seus próprios campos de registro de voo para capturar o que for importante para sua operação, cada um com seu próprio gráfico de tendência no painel.
 - **Gráficos e estatísticas** — o gráfico de Tendência de Horas de Voo alterna entre as visualizações Semanal (8 semanas), Mensal (6 meses) e Últimos 30 Dias.
-- **Backup e exportação** — baixe um backup completo em JSON (ou restaure/mescle um de volta) a qualquer momento, além de exportar o diário de voo em CSV com um clique. Como tudo fica armazenado no navegador, exportar um backup periodicamente é a única forma de manter seus dados seguros.
-- **PWA instalável** — instale na tela inicial e use offline graças a um service worker.
+- **Backup e exportação** — baixe um backup completo em JSON a qualquer momento, além de exportar o diário de voo em CSV com um clique (abre corretamente no Excel). Ao importar um backup, escolha "Substituir" (apaga o que está no dispositivo e usa o backup) ou "Mesclar" (adiciona só o que falta, ignorando duplicados); registros danificados são ignorados e contados. Como tudo fica armazenado no navegador, exportar um backup periodicamente é a única forma de manter seus dados seguros.
+- **PWA instalável, 100% offline** — Tailwind, Chart.js e Font Awesome ficam na pasta `vendor/`, então o app não faz nenhuma requisição a terceiros. O service worker salva o app inteiro na primeira visita e o abre a partir dessa cópia, sem esperar pela rede; basta uma visita com internet. Novas versões são baixadas em segundo plano e o aviso "Atualização disponível" oferece recarregar. A linha "Uso offline" na barra lateral mostra o estado: Pronto, Preparando…, Arquivos locais ou Indisponível.
 - **Multilíngue** — disponível em inglês, ucraniano e português (BR).
 - **Armazenamento somente local** — todos os dados ficam no `localStorage` do seu navegador; nada é enviado a um servidor.
 
 ## Uso
 
-O FlyLog é um único arquivo HTML estático, sem etapa de build ou dependências. Para executá-lo:
+O FlyLog é um site estático, sem etapa de build. O `index.html` precisa da pasta `vendor/`, do `sw.js`, do manifest e dos ícones ao lado. Para executá-lo:
 
-1. Abra `index.html` diretamente no navegador, ou
-2. Sirva a pasta com qualquer servidor de arquivos estáticos (ex.: `npx serve .`) e abra no navegador.
-3. Opcionalmente, instale-o como PWA pelo prompt de instalação do navegador para uso offline.
+1. Abra `index.html` diretamente no navegador (funciona sem internet desde que `vendor/` fique ao lado; nesse caso não há service worker), ou
+2. Sirva a pasta com qualquer servidor de arquivos estáticos (ex.: `npx serve .`) e abra no navegador. Uma visita com internet já salva o app para uso offline.
+3. Opcionalmente, instale-o como PWA pelo prompt de instalação do navegador.
 
 ## Dados e privacidade
 
 Todos os dados de voos e frota são armazenados localmente no seu navegador via `localStorage`. Nada é transmitido a nenhum servidor. Limpar os dados do navegador removerá essas informações, então exporte/faça backup regularmente se depender desses dados.
+
+## Desenvolvimento
+
+Os testes usam Playwright (Chromium): rode `npm install` e depois `npm test`.
+
+Ao adicionar um arquivo à página, liste-o também no `sw.js` para que seja salvo para uso offline (um teste garante isso).
 
 ## Licença
 
