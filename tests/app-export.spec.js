@@ -6,6 +6,21 @@ test.use(CONTEXT_OPTIONS);
 
 const now = new Date();
 
+const BOM = '﻿';
+
+// CSV text after the UTF-8 byte order mark, which must come first (Excel needs
+// it to read the file as UTF-8).
+async function csvText(dl) {
+  const stream = await dl.createReadStream();
+  const chunks = [];
+  for await (const c of stream) chunks.push(c);
+  const bytes = Buffer.concat(chunks);
+  expect([...bytes.subarray(0, 3)]).toEqual([0xef, 0xbb, 0xbf]);
+  const text = bytes.toString('utf8');
+  expect(text.startsWith(BOM)).toBe(true);
+  return text.slice(BOM.length);
+}
+
 async function download(page, buttonId) {
   const [dl] = await Promise.all([
     page.waitForEvent('download'),
@@ -67,7 +82,7 @@ test.describe('CSV export', () => {
 
     const dl = await download(page, '#btnExportCSV');
     expect(dl.suggestedFilename()).toMatch(/^flylog_flights_\d{4}-\d{2}-\d{2}\.csv$/);
-    const text = await downloadText(dl);
+    const text = await csvText(dl);
 
     // raw text: header line, and escaping of commas / quotes / newlines inside quoted cells
     expect(text.split('\n')[0]).toBe('"Airframe","Battery","Start Time","End Time","Duration (Min)","Notes"');
@@ -96,7 +111,7 @@ test.describe('CSV export', () => {
     fx.customFields = [{ id: 'cf-pts', label: 'Points, scored', type: 'number' }, { id: 'cf-pilot', label: 'Pilot', type: 'text' }];
     fx.flights[0].customValues = { 'cf-pts': 3.5, 'cf-pilot': 'Sam "the pilot", Jr' };
     await openApp(page, { fixture: fx });
-    const text = await downloadText(await download(page, '#btnExportCSV'));
+    const text = await csvText(await download(page, '#btnExportCSV'));
     expect(text.split('\n')[0]).toBe('"Airframe","Battery","Start Time","End Time","Duration (Min)","Notes","Points, scored","Pilot"');
     const rows = parseCsv(text);
     expect(rows.every((r) => r.length === 8)).toBe(true);
@@ -110,9 +125,35 @@ test.describe('CSV export', () => {
     const fx = makeFixture(now);
     fx.flights[0].notes = '=SUM(A1:A2)';
     await openApp(page, { fixture: fx });
-    const rows = parseCsv(await downloadText(await download(page, '#btnExportCSV')));
+    const rows = parseCsv(await csvText(await download(page, '#btnExportCSV')));
     const row = rows.find((r) => r[5].includes('SUM(A1:A2)'));
     expect(row[5]).toBe("'=SUM(A1:A2)");
+  });
+
+  test('also neutralises cells that begin with a tab or a carriage return', async ({ page }) => {
+    const fx = makeFixture(now);
+    fx.flights[0].notes = '\t=HYPERLINK("http://x")';
+    fx.flights[1].notes = '\r=1+1';
+    fx.flights[2].notes = 'Tab\tinside is fine';
+    fx.customFields = [{ id: 'cf-pilot', label: 'Pilot', type: 'text' }];
+    fx.flights[3].customValues = { 'cf-pilot': '\tSam' };
+    await openApp(page, { fixture: fx });
+    const text = await csvText(await download(page, '#btnExportCSV'));
+    expect(text).toContain(`"'\t=HYPERLINK(""http://x"")"`);
+    expect(text).toContain(`"'\r=1+1"`);
+    expect(text).toContain('"Tab\tinside is fine"');
+    expect(text).toContain(`"'\tSam"`);
+  });
+
+  test('keeps Ukrainian and Portuguese text intact after the byte order mark', async ({ page }) => {
+    const fx = makeFixture(now);
+    fx.drones[0].name = 'Дрон Альфа';
+    fx.flights[0].droneName = 'Дрон Альфа';
+    fx.flights[0].notes = 'Inspeção do telhado — ção, ã, é';
+    await openApp(page, { fixture: fx });
+    const rows = parseCsv(await csvText(await download(page, '#btnExportCSV')));
+    expect(rows[0][0]).toBe('Airframe');
+    expect(rows.find((r) => r[0] === 'Дрон Альфа')[5]).toBe('Inspeção do telhado — ção, ã, é');
   });
 
   test('exports nothing (no download) when there are no flights', async ({ page }) => {

@@ -780,6 +780,33 @@
         </div>
     </div>
 
+    <!-- MODAL 6: IMPORT BACKUP — REPLACE OR MERGE -->
+    <div id="modalImportChoice" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="importChoiceTitle">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center gap-2">
+                <div class="p-2 rounded-lg bg-cyan-950/60 border border-cyan-800/40 text-cyan-400">
+                    <i class="fa-solid fa-file-import"></i>
+                </div>
+                <h3 id="importChoiceTitle" class="font-bold text-white text-base" data-i18n="importChoiceTitle">Restore backup</h3>
+            </div>
+            <p id="importChoiceContents" class="text-xs text-slate-300"></p>
+            <p class="text-xs text-slate-400" data-i18n="importChoiceQuestion">How should it be imported?</p>
+            <div class="space-y-2">
+                <button type="button" id="btnImportMerge" class="w-full text-left px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 hover:border-cyan-500 transition">
+                    <span class="block text-sm font-bold text-cyan-400" data-i18n="importMergeBtn">Merge</span>
+                    <span class="block text-xs text-slate-400 mt-0.5" data-i18n="importMergeDesc">Keep everything on this device and add only the drones, batteries and flights that are not here yet.</span>
+                </button>
+                <button type="button" id="btnImportReplace" class="w-full text-left px-4 py-3 rounded-xl bg-slate-950 border border-rose-900/60 hover:border-rose-500 transition">
+                    <span class="block text-sm font-bold text-rose-400" data-i18n="importReplaceBtn">Replace</span>
+                    <span class="block text-xs text-slate-400 mt-0.5" data-i18n="importReplaceDesc">Remove all current drones, batteries, flights, statuses and custom fields from this device and use the backup instead. This cannot be undone.</span>
+                </button>
+            </div>
+            <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
+                <button type="button" id="btnImportCancel" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition" data-i18n="cancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification Overlay -->
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
@@ -856,17 +883,61 @@
 
         // Safely read + parse a localStorage key, falling back to a default if the
         // key is missing, storage is unavailable, or the stored JSON is corrupted.
-        function loadFromStorage(key, fallback) {
+        //
+        // A damaged value (unparseable JSON, or the wrong shape: not an array
+        // where a list is expected, not an object where a map is expected) is
+        // copied to a `flylog_corrupt_*` key BEFORE the app can save over it, so
+        // a pilot's only copy of their log is never destroyed silently. If that
+        // copy cannot be made (e.g. storage is full) saving is switched off for
+        // the session instead. Either way the pilot is told once, after startup.
+        const storageRecovery = { preserved: [], failed: [] };
+        let storageWritesBlocked = false;
+
+        function preserveCorruptValue(key, raw) {
+            const base = 'flylog_corrupt_' + key.replace(/^flylog_/, '');
             try {
-                const raw = localStorage.getItem(key);
-                if (raw === null) return fallback;
-                const parsed = JSON.parse(raw);
-                return parsed === null || parsed === undefined ? fallback : parsed;
+                const existing = localStorage.getItem(base);
+                const target = existing === null || existing === raw ? base : `${base}_${Date.now()}`;
+                if (existing !== raw) localStorage.setItem(target, raw);
+                storageRecovery.preserved.push(target);
+            } catch (err) {
+                console.warn(`FlyLog: could not preserve damaged "${key}"; saving is disabled for this session.`, err);
+                storageRecovery.failed.push(key);
+                storageWritesBlocked = true;
+            }
+        }
+
+        function loadFromStorage(key, fallback) {
+            let raw;
+            try {
+                raw = localStorage.getItem(key);
             } catch (err) {
                 console.warn(`FlyLog: could not read "${key}" from storage, using defaults.`, err);
                 return fallback;
             }
+            if (raw === null) return fallback;
+            let parsed, ok = true;
+            try {
+                parsed = JSON.parse(raw);
+            } catch (err) {
+                ok = false;
+            }
+            if (ok && parsed !== null) {
+                if (Array.isArray(fallback)) ok = Array.isArray(parsed);
+                else if (fallback && typeof fallback === 'object') ok = typeof parsed === 'object' && !Array.isArray(parsed);
+            }
+            if (!ok) {
+                console.warn(`FlyLog: stored "${key}" is damaged, using defaults and keeping a copy.`);
+                preserveCorruptValue(key, raw);
+                return fallback;
+            }
+            return parsed === null || parsed === undefined ? fallback : parsed;
         }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            if (storageRecovery.failed.length) showToast(t('toastStorageRecoveryFailed'), 'warning');
+            else if (storageRecovery.preserved.length) showToast(t('toastStorageRecovered'), 'warning');
+        });
 
         // One-time migration: the app was previously named AeroLog and stored its
         // data under `aerolog_*` keys. Copy that data over to the new `flylog_*`
@@ -1100,7 +1171,20 @@
                 toastCouldNotReadFile: "Could not read that file",
                 toastNotValidJson: "That file is not valid JSON",
                 toastNotFlyLogBackup: "That file doesn't look like a FlyLog backup",
-                toastImportedSummary: "Imported {flights} flights, {drones} drones, {batteries} batteries",
+                importChoiceTitle: "Restore backup",
+                importChoiceContents: "This backup contains drones: {drones}, batteries: {batteries}, flights: {flights}.",
+                importChoiceQuestion: "How should it be imported?",
+                importMergeBtn: "Merge",
+                importMergeDesc: "Keep everything on this device and add only the drones, batteries and flights that are not here yet.",
+                importReplaceBtn: "Replace",
+                importReplaceDesc: "Remove all current drones, batteries, flights, statuses and custom fields from this device and use the backup instead. This cannot be undone.",
+                toastImportMerged: "Merge complete: {added} added, {skipped} skipped as already present",
+                toastImportReplaced: "Backup restored: {added} items loaded",
+                toastImportMalformed_one: "{n} damaged record was ignored",
+                toastImportMalformed_other: "{n} damaged records were ignored",
+                toastImportFailed: "Import failed, nothing was changed",
+                toastStorageRecovered: "Some saved data could not be read. A copy of it was kept on this device, and FlyLog started with default data. Restore a backup to get your data back.",
+                toastStorageRecoveryFailed: "Some saved data could not be read or copied. FlyLog will not save changes in this session so the damaged data is not overwritten.",
                 toastFieldExists: "A field named \"{label}\" already exists",
                 toastFieldAdded: "Field \"{label}\" added",
                 confirmRemoveFieldMsg: "Remove custom field \"{label}\"? Its recorded values will be deleted from all flight logs. This cannot be undone.",
@@ -1328,7 +1412,21 @@
                 toastCouldNotReadFile: "Не вдалося прочитати файл",
                 toastNotValidJson: "Файл не є дійсним JSON",
                 toastNotFlyLogBackup: "Файл не схожий на резервну копію FlyLog",
-                toastImportedSummary: "Імпортовано: польотів — {flights}, дронів — {drones}, батарей — {batteries}",
+                importChoiceTitle: "Відновлення з резервної копії",
+                importChoiceContents: "У резервній копії: дронів — {drones}, батарей — {batteries}, польотів — {flights}.",
+                importChoiceQuestion: "Як її імпортувати?",
+                importMergeBtn: "Об’єднати",
+                importMergeDesc: "Зберегти все, що є на цьому пристрої, і додати лише ті дрони, батареї та польоти, яких тут ще немає.",
+                importReplaceBtn: "Замінити",
+                importReplaceDesc: "Видалити з цього пристрою всі поточні дрони, батареї, польоти, статуси та власні поля і натомість використати дані з резервної копії. Цю дію не можна скасувати.",
+                toastImportMerged: "Об’єднання завершено: додано — {added}, пропущено як наявні — {skipped}",
+                toastImportReplaced: "Резервну копію відновлено: завантажено записів — {added}",
+                toastImportMalformed_one: "{n} пошкоджений запис пропущено",
+                toastImportMalformed_few: "{n} пошкоджені записи пропущено",
+                toastImportMalformed_many: "{n} пошкоджених записів пропущено",
+                toastImportFailed: "Не вдалося імпортувати, нічого не змінено",
+                toastStorageRecovered: "Частину збережених даних не вдалося прочитати. Їхню копію збережено на цьому пристрої, а FlyLog запущено з типовими даними. Відновіть резервну копію, щоб повернути свої дані.",
+                toastStorageRecoveryFailed: "Частину збережених даних не вдалося ні прочитати, ні скопіювати. У цьому сеансі FlyLog не зберігатиме зміни, щоб не перезаписати пошкоджені дані.",
                 toastFieldExists: "Поле з назвою «{label}» вже існує",
                 toastFieldAdded: "Поле «{label}» додано",
                 confirmRemoveFieldMsg: "Видалити користувацьке поле «{label}»? Його записані значення буде видалено з усіх польотів. Цю дію неможливо скасувати.",
@@ -1550,7 +1648,20 @@
                 toastCouldNotReadFile: "Não foi possível ler o arquivo",
                 toastNotValidJson: "O arquivo não é um JSON válido",
                 toastNotFlyLogBackup: "Esse arquivo não parece ser um backup do FlyLog",
-                toastImportedSummary: "Importado: {flights} voos, {drones} drones, {batteries} baterias",
+                importChoiceTitle: "Restaurar backup",
+                importChoiceContents: "Este backup contém drones: {drones}, baterias: {batteries}, voos: {flights}.",
+                importChoiceQuestion: "Como você quer importá-lo?",
+                importMergeBtn: "Mesclar",
+                importMergeDesc: "Manter tudo o que está neste dispositivo e adicionar apenas os drones, baterias e voos que ainda não estão aqui.",
+                importReplaceBtn: "Substituir",
+                importReplaceDesc: "Remover deste dispositivo todos os drones, baterias, voos, status e campos personalizados atuais e usar o backup no lugar. Isso não pode ser desfeito.",
+                toastImportMerged: "Mesclagem concluída: {added} adicionados, {skipped} ignorados por já existirem",
+                toastImportReplaced: "Backup restaurado: {added} itens carregados",
+                toastImportMalformed_one: "{n} registro danificado foi ignorado",
+                toastImportMalformed_other: "{n} registros danificados foram ignorados",
+                toastImportFailed: "Falha na importação, nada foi alterado",
+                toastStorageRecovered: "Alguns dados salvos não puderam ser lidos. Uma cópia deles foi mantida neste dispositivo e o FlyLog iniciou com os dados padrão. Restaure um backup para recuperar seus dados.",
+                toastStorageRecoveryFailed: "Alguns dados salvos não puderam ser lidos nem copiados. O FlyLog não salvará alterações nesta sessão para não sobrescrever os dados danificados.",
                 toastFieldExists: "Já existe um campo chamado \"{label}\"",
                 toastFieldAdded: "Campo \"{label}\" adicionado",
                 confirmRemoveFieldMsg: "Remover o campo personalizado \"{label}\"? Seus valores registrados serão excluídos de todos os registros de voo. Esta ação não pode ser desfeita.",
@@ -1864,17 +1975,43 @@
             try { localStorage.setItem(INSTALL_DISMISSED_KEY, '1'); } catch (err) {}
         });
 
+        // Persist all six data keys as one unit: localStorage has no
+        // transactions, so remember each key's previous value and, if any write
+        // fails (typically the quota), put back every key already written. The
+        // keys on disk therefore always describe one consistent state.
+        // Returns true when everything was saved.
         function saveState() {
+            if (storageWritesBlocked) return false;
+            const written = [];
             try {
-                localStorage.setItem('flylog_flights', JSON.stringify(state.flights));
-                localStorage.setItem('flylog_drones', JSON.stringify(state.drones));
-                localStorage.setItem('flylog_batteries', JSON.stringify(state.batteries));
-                localStorage.setItem('flylog_drone_statuses', JSON.stringify(state.droneStatuses));
-                localStorage.setItem('flylog_drone_status_colors', JSON.stringify(state.droneStatusColors));
-                localStorage.setItem('flylog_custom_fields', JSON.stringify(state.customFields));
+                const entries = [
+                    ['flylog_flights', state.flights],
+                    ['flylog_drones', state.drones],
+                    ['flylog_batteries', state.batteries],
+                    ['flylog_drone_statuses', state.droneStatuses],
+                    ['flylog_drone_status_colors', state.droneStatusColors],
+                    ['flylog_custom_fields', state.customFields]
+                ].map(([key, value]) => [key, JSON.stringify(value)]);
+                for (const [key, json] of entries) {
+                    const previous = localStorage.getItem(key);
+                    if (previous === json) continue;
+                    localStorage.setItem(key, json); // a failed write leaves the key as it was
+                    written.push([key, previous]);
+                }
+                return true;
             } catch (err) {
-                console.error('FlyLog: failed to save to local storage.', err);
+                console.warn('FlyLog: failed to save to local storage; previous data kept.', err);
+                for (let i = written.length - 1; i >= 0; i--) {
+                    const [key, previous] = written[i];
+                    try {
+                        if (previous === null) localStorage.removeItem(key);
+                        else localStorage.setItem(key, previous);
+                    } catch (restoreErr) {
+                        console.error(`FlyLog: could not restore "${key}" after a failed save.`, restoreErr);
+                    }
+                }
                 showToast(t('toastStorageFull'), 'warning');
+                return false;
             }
         }
 
@@ -1969,6 +2106,9 @@
                 if (file) importBackupFile(file);
                 e.target.value = ''; // allow re-selecting the same file later
             });
+            document.getElementById('btnImportMerge')?.addEventListener('click', () => finishImport('merge'));
+            document.getElementById('btnImportReplace')?.addEventListener('click', () => finishImport('replace'));
+            document.getElementById('btnImportCancel')?.addEventListener('click', closeImportChoiceModal);
 
             // Confirm Modal
             document.getElementById('btnConfirmCancel')?.addEventListener('click', closeConfirmModal);
@@ -3604,10 +3744,12 @@
 
         // CSV Exporter
         // Neutralize spreadsheet formula injection: a cell starting with
-        // = + - or @ gets interpreted as a formula by Excel/Sheets on open.
+        // = + - or @ gets interpreted as a formula by Excel/Sheets on open, and
+        // a leading tab or carriage return can hide one of those (OWASP CSV
+        // injection guidance), so those are neutralized too.
         function csvSafeCell(value) {
             let str = String(value ?? '');
-            if (/^[=+\-@]/.test(str)) str = `'${str}`;
+            if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`;
             return `"${str.replace(/"/g, '""')}"`;
         }
 
@@ -3640,7 +3782,9 @@
                 csv += row.join(',') + '\n';
             });
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            // The UTF-8 byte order mark makes Excel read the file as UTF-8, so
+            // Ukrainian and Portuguese text is not garbled.
+            const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.setAttribute('href', url);
@@ -3679,128 +3823,396 @@
             showToast(t('toastBackupDownloaded'), 'success');
         }
 
+        // --- Import: the file is read, validated and normalised in full into
+        // temporary structures (parseBackup), then the pilot chooses Replace or
+        // Merge, the new state is built aside (planReplaceImport /
+        // planMergeImport) and committed in one step (commitImport). Nothing
+        // touches `state` until that commit, so a bad file can never leave a
+        // half-import behind, and every record that reaches `state` has the
+        // types the renderers rely on.
+        const DEFAULT_DRONE_STATUSES = ['Ready', 'Maintenance', 'In Inspection', 'Repairing', 'Retired'];
+        const BATTERY_STATUSES = ['Good', 'Warning', 'Retired'];
+        const IMPORT_TIME_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d{1,3})?)?$/;
+        let pendingImport = null;
+
+        // Names (drones, batteries, statuses, fields) match trimmed and case-insensitively.
+        function importNameKey(name) {
+            return String(name ?? '').trim().toLowerCase();
+        }
+        function isPlainObject(v) {
+            return !!v && typeof v === 'object' && !Array.isArray(v);
+        }
+        function newImportId(prefix) {
+            return prefix + '-' + Date.now() + '-' + Math.random().toString(36).slice(2, 9);
+        }
+        // A usable id (string, or a number as older data had), else null.
+        function importId(v) {
+            if (typeof v === 'string' && v) return v;
+            if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+            return null;
+        }
+        // Missing -> 0; a finite number or numeric string -> number; anything else -> undefined (malformed).
+        function importNumber(v) {
+            if (v === undefined || v === null || v === '') return 0;
+            const n = typeof v === 'number' ? v : (typeof v === 'string' ? Number(v) : NaN);
+            return Number.isFinite(n) ? n : undefined;
+        }
+        // Missing -> ''; a valid 'YYYY-MM-DDTHH:mm' string -> itself; anything else -> undefined (malformed).
+        function importTime(v) {
+            if (v === undefined || v === null || v === '') return '';
+            if (typeof v !== 'string' || !IMPORT_TIME_RE.test(v) || isNaN(new Date(v).getTime())) return undefined;
+            return v;
+        }
+        // Optional string: missing -> '', string -> itself, other -> undefined (malformed).
+        function importText(v) {
+            if (v === undefined || v === null) return '';
+            return typeof v === 'string' ? v : undefined;
+        }
+        // A custom value converted to the field's type, or undefined to leave it out.
+        function importFieldValue(type, v) {
+            if (type === 'number') {
+                if (typeof v === 'number') return Number.isFinite(v) ? v : undefined;
+                if (typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v))) return Number(v);
+                return undefined;
+            }
+            if (typeof v === 'string') return v;
+            if (typeof v === 'number' && Number.isFinite(v)) return String(v);
+            return undefined;
+        }
+
+        // Validate + normalise a parsed backup. Returns null when it is not a
+        // FlyLog backup at all; otherwise clean records (flights point at the
+        // parsed drone/battery/field objects) and a count of dropped records.
+        function parseBackup(data) {
+            if (!isPlainObject(data) ||
+                !Array.isArray(data.drones) || !Array.isArray(data.batteries) || !Array.isArray(data.flights)) {
+                return null;
+            }
+            let malformed = 0;
+
+            const statuses = [];
+            const statusByKey = new Map();
+            const addStatus = (name) => {
+                const clean = name.trim();
+                const key = clean.toLowerCase();
+                if (!statusByKey.has(key)) { statusByKey.set(key, clean); statuses.push(clean); }
+                return statusByKey.get(key);
+            };
+            const statusesProvided = Array.isArray(data.droneStatuses);
+            if (statusesProvided) {
+                data.droneStatuses.forEach(s => {
+                    if (typeof s === 'string' && s.trim()) addStatus(s); else malformed++;
+                });
+            }
+
+            const fields = [];
+            const fieldByKey = new Map();
+            const fieldByOldId = new Map();
+            (Array.isArray(data.customFields) ? data.customFields : []).forEach(cf => {
+                if (!isPlainObject(cf) || typeof cf.label !== 'string' || !cf.label.trim()) { malformed++; return; }
+                const label = cf.label.trim();
+                const key = label.toLowerCase();
+                let field = fieldByKey.get(key);
+                if (!field) {
+                    let id = importId(cf.id);
+                    if (!id || fields.some(f => f.id === id)) id = newImportId('cf');
+                    field = { id, label, type: cf.type === 'number' ? 'number' : 'text' };
+                    fields.push(field);
+                    fieldByKey.set(key, field);
+                }
+                const oldId = importId(cf.id);
+                if (oldId && !fieldByOldId.has(oldId)) fieldByOldId.set(oldId, field);
+            });
+
+            const parseAsset = (list, prefix, extra) => {
+                const out = [];
+                const byOldId = new Map();
+                const usedIds = new Set();
+                list.forEach(item => {
+                    if (!isPlainObject(item) || typeof item.name !== 'string' || !item.name.trim()) { malformed++; return; }
+                    const rest = extra(item);
+                    if (!rest) { malformed++; return; }
+                    const oldId = importId(item.id);
+                    const id = oldId && !usedIds.has(oldId) ? oldId : newImportId(prefix);
+                    usedIds.add(id);
+                    const rec = Object.assign({ id, name: item.name.trim() }, rest);
+                    out.push(rec);
+                    if (oldId && !byOldId.has(oldId)) byOldId.set(oldId, rec);
+                });
+                return { list: out, byOldId };
+            };
+
+            const drones = parseAsset(data.drones, 'uav', d => {
+                const model = importText(d.model);
+                const flightHours = importNumber(d.flightHours);
+                const status = importText(d.status);
+                if (model === undefined || flightHours === undefined || status === undefined) return null;
+                // Statuses a drone uses are always added to the list (status: null = use the list's first).
+                return { model, flightHours, status: status.trim() ? addStatus(status) : null };
+            });
+            const batteries = parseAsset(data.batteries, 'bat', b => {
+                const cycles = importNumber(b.cycles);
+                const flightHours = importNumber(b.flightHours);
+                const status = importText(b.status);
+                if (cycles === undefined || flightHours === undefined || status === undefined) return null;
+                const known = BATTERY_STATUSES.find(s => s.toLowerCase() === status.trim().toLowerCase());
+                return { cycles, flightHours, status: known || 'Good' };
+            });
+
+            const colors = {};
+            if (isPlainObject(data.droneStatusColors)) {
+                Object.keys(data.droneStatusColors).forEach(name => {
+                    const hex = data.droneStatusColors[name];
+                    if (!name.trim() || typeof hex !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(hex)) return;
+                    colors[statusByKey.get(importNameKey(name)) || name.trim()] = hex;
+                });
+            }
+
+            const flights = [];
+            const flightIds = new Set();
+            data.flights.forEach(f => {
+                if (!isPlainObject(f)) { malformed++; return; }
+                const startTime = importTime(f.startTime);
+                const endTime = importTime(f.endTime);
+                const duration = importNumber(f.duration);
+                const notes = importText(f.notes);
+                // Current backups carry droneName/batteryName; very old data only drone/battery names.
+                const droneName = importText(f.droneName != null ? f.droneName : f.drone);
+                const batteryName = importText(f.batteryName != null ? f.batteryName : f.battery);
+                if (startTime === undefined || endTime === undefined || duration === undefined || notes === undefined ||
+                    droneName === undefined || batteryName === undefined ||
+                    (f.customValues != null && !isPlainObject(f.customValues))) {
+                    malformed++;
+                    return;
+                }
+                const droneOldId = importId(f.droneId);
+                const batteryOldId = importId(f.batteryId);
+                let drone = droneOldId ? drones.byOldId.get(droneOldId) || null : null;
+                let battery = batteryOldId ? batteries.byOldId.get(batteryOldId) || null : null;
+                if (f.droneId === undefined && !drone && droneName) {
+                    drone = drones.list.find(d => importNameKey(d.name) === importNameKey(droneName)) || null;
+                }
+                if (f.batteryId === undefined && !battery && batteryName) {
+                    battery = batteries.list.find(b => importNameKey(b.name) === importNameKey(batteryName)) || null;
+                }
+                const customValues = new Map();
+                Object.keys(f.customValues || {}).forEach(oldFieldId => {
+                    const field = fieldByOldId.get(oldFieldId);
+                    if (!field) return;
+                    const v = importFieldValue(field.type, f.customValues[oldFieldId]);
+                    if (v !== undefined) customValues.set(field, v);
+                });
+                let id = importId(f.id);
+                if (!id || flightIds.has(id)) id = newImportId('flt');
+                flightIds.add(id);
+                flights.push({
+                    id,
+                    drone, droneOldId,
+                    droneName: droneName || (drone ? drone.name : t('unknownAirframeFallback')),
+                    battery, batteryOldId,
+                    batteryName: batteryName || (battery ? battery.name : ''),
+                    startTime, endTime, duration, notes, customValues
+                });
+            });
+
+            return {
+                drones: drones.list, batteries: batteries.list, flights, fields,
+                statuses, statusesProvided, colors, malformed
+            };
+        }
+
+        function importFlightRecord(f, droneId, batteryId, fieldIdFor, fieldTypeFor) {
+            const customValues = {};
+            f.customValues.forEach((v, field) => {
+                const id = fieldIdFor(field);
+                const value = importFieldValue(fieldTypeFor(field), v);
+                if (id && value !== undefined) customValues[id] = value;
+            });
+            return {
+                id: f.id, droneId, droneName: f.droneName, batteryId, batteryName: f.batteryName,
+                startTime: f.startTime, endTime: f.endTime, duration: f.duration, notes: f.notes, customValues
+            };
+        }
+
+        // Replace: the result is exactly the backup's data.
+        function planReplaceImport(p) {
+            let statuses = p.statuses.slice();
+            if (!p.statusesProvided) {
+                const keys = new Set(statuses.map(importNameKey));
+                statuses = DEFAULT_DRONE_STATUSES.filter(s => !keys.has(importNameKey(s))).concat(statuses);
+            }
+            if (!statuses.length) statuses = ['Ready'];
+            const next = {
+                droneStatuses: statuses,
+                droneStatusColors: Object.assign({}, p.colors),
+                customFields: p.fields.map(f => ({ id: f.id, label: f.label, type: f.type })),
+                drones: p.drones.map(d => ({ id: d.id, name: d.name, model: d.model, flightHours: d.flightHours, status: d.status || statuses[0] })),
+                batteries: p.batteries.map(b => ({ id: b.id, name: b.name, cycles: b.cycles, flightHours: b.flightHours, status: b.status })),
+                // A flight whose airframe/battery is not in the backup (deleted
+                // before the export) keeps its original id reference, as it had.
+                flights: p.flights.map(f => importFlightRecord(f,
+                    f.drone ? f.drone.id : f.droneOldId,
+                    f.battery ? f.battery.id : f.batteryOldId,
+                    field => field.id, field => field.type))
+            };
+            return { next, added: next.drones.length + next.batteries.length + next.flights.length, skipped: 0 };
+        }
+
+        // Identity of a flight for Merge duplicate detection. The airframe and
+        // battery are the linked item when it exists, else the name snapshot.
+        function flightIdentity(f, droneIds, batteryIds) {
+            const values = Object.keys(f.customValues || {}).sort()
+                .filter(k => f.customValues[k] !== '' && f.customValues[k] !== null && f.customValues[k] !== undefined)
+                .map(k => [k, f.customValues[k]]);
+            return JSON.stringify([
+                f.droneId && droneIds.has(f.droneId) ? 'id:' + f.droneId : 'name:' + importNameKey(f.droneName),
+                f.batteryId && batteryIds.has(f.batteryId) ? 'id:' + f.batteryId : 'name:' + importNameKey(f.batteryName),
+                f.startTime || '', f.endTime || '', Number(f.duration) || 0, f.notes || '', values
+            ]);
+        }
+
+        // Merge: add what is missing; same-name items are the existing item.
+        function planMergeImport(p) {
+            let added = 0, skipped = 0;
+
+            const statuses = state.droneStatuses.slice();
+            const statusByKey = new Map(statuses.map(s => [importNameKey(s), s]));
+            p.statuses.forEach(s => {
+                if (!statusByKey.has(importNameKey(s))) { statusByKey.set(importNameKey(s), s); statuses.push(s); }
+            });
+            if (!statuses.length) { statuses.push('Ready'); statusByKey.set('ready', 'Ready'); }
+            const canonicalStatus = s => (s && statusByKey.get(importNameKey(s))) || statuses[0];
+
+            // A locally chosen colour always wins over the backup's.
+            const colors = Object.assign({}, state.droneStatusColors);
+            Object.keys(p.colors).forEach(name => {
+                const canonical = statusByKey.get(importNameKey(name)) || name;
+                if (!colors[canonical]) colors[canonical] = p.colors[name];
+            });
+
+            const customFields = state.customFields.slice();
+            const fieldTarget = new Map();
+            p.fields.forEach(field => {
+                let target = customFields.find(f => importNameKey(f.label) === importNameKey(field.label));
+                if (!target) {
+                    const id = customFields.some(f => f.id === field.id) ? newImportId('cf') : field.id;
+                    target = { id, label: field.label, type: field.type };
+                    customFields.push(target);
+                }
+                fieldTarget.set(field, target);
+            });
+
+            const mergeAssets = (existing, incoming, prefix, build) => {
+                const list = existing.slice();
+                const ids = new Set(list.map(x => x.id));
+                const target = new Map();
+                incoming.forEach(item => {
+                    const match = list.find(x => importNameKey(x.name) === importNameKey(item.name));
+                    if (match) { target.set(item, match); skipped++; return; }
+                    const id = ids.has(item.id) ? newImportId(prefix) : item.id;
+                    ids.add(id);
+                    const rec = build(item, id);
+                    list.push(rec);
+                    target.set(item, rec);
+                    added++;
+                });
+                return { list, target, ids };
+            };
+            const drones = mergeAssets(state.drones, p.drones, 'uav', (d, id) =>
+                ({ id, name: d.name, model: d.model, flightHours: d.flightHours, status: canonicalStatus(d.status) }));
+            const batteries = mergeAssets(state.batteries, p.batteries, 'bat', (b, id) =>
+                ({ id, name: b.name, cycles: b.cycles, flightHours: b.flightHours, status: b.status }));
+
+            const flights = state.flights.slice();
+            const known = new Set(flights.map(f => flightIdentity(f, drones.ids, batteries.ids)));
+            const flightIds = new Set(flights.map(f => f.id));
+            p.flights.forEach(f => {
+                const drone = f.drone ? drones.target.get(f.drone) : null;
+                const battery = f.battery ? batteries.target.get(f.battery) : null;
+                const rec = importFlightRecord(f, drone ? drone.id : null, battery ? battery.id : null,
+                    field => fieldTarget.get(field).id, field => fieldTarget.get(field).type);
+                // A flight attached to an item shows that item's name, as a newly logged one would.
+                if (drone) rec.droneName = drone.name;
+                if (battery) rec.batteryName = battery.name;
+                if (known.has(flightIdentity(rec, drones.ids, batteries.ids))) { skipped++; return; }
+                if (flightIds.has(rec.id)) rec.id = newImportId('flt');
+                flightIds.add(rec.id);
+                flights.push(rec);
+                added++;
+            });
+
+            return {
+                next: {
+                    droneStatuses: statuses, droneStatusColors: colors, customFields,
+                    drones: drones.list, batteries: batteries.list, flights
+                },
+                added, skipped
+            };
+        }
+
+        // Swap the new data in as one step and save it; if the save fails the
+        // previous in-memory state comes back, so the app and disk still agree.
+        function commitImport(next) {
+            const keys = ['flights', 'drones', 'batteries', 'droneStatuses', 'droneStatusColors', 'customFields'];
+            const previous = {};
+            keys.forEach(k => { previous[k] = state[k]; });
+            keys.forEach(k => { state[k] = next[k]; });
+            if (!saveState()) {
+                keys.forEach(k => { state[k] = previous[k]; });
+                renderAll();
+                showToast(t('toastImportFailed'), 'warning');
+                return false;
+            }
+            renderAll();
+            return true;
+        }
+
+        function openImportChoiceModal(parsed) {
+            pendingImport = parsed;
+            document.getElementById('importChoiceContents').textContent = t('importChoiceContents', {
+                drones: parsed.drones.length, batteries: parsed.batteries.length, flights: parsed.flights.length
+            });
+            document.getElementById('modalImportChoice').classList.remove('hidden');
+            document.getElementById('btnImportMerge').focus();
+        }
+
+        function closeImportChoiceModal() {
+            document.getElementById('modalImportChoice').classList.add('hidden');
+            pendingImport = null;
+        }
+
+        function finishImport(mode) {
+            const parsed = pendingImport;
+            const modal = document.getElementById('modalImportChoice');
+            const wasOpen = !modal.classList.contains('hidden');
+            closeImportChoiceModal();
+            if (!parsed || !wasOpen) return;
+            const plan = mode === 'replace' ? planReplaceImport(parsed) : planMergeImport(parsed);
+            if (!commitImport(plan.next)) return;
+            let message = mode === 'replace'
+                ? t('toastImportReplaced', { added: plan.added })
+                : t('toastImportMerged', { added: plan.added, skipped: plan.skipped });
+            if (parsed.malformed) message += '. ' + tCount('toastImportMalformed', parsed.malformed);
+            showToast(message, parsed.malformed ? 'warning' : 'success');
+        }
+
         function importBackupFile(file) {
             const reader = new FileReader();
             reader.onerror = () => showToast(t('toastCouldNotReadFile'), 'warning');
             reader.onload = () => {
                 let data;
                 try {
-                    data = JSON.parse(reader.result);
+                    data = JSON.parse(String(reader.result).replace(/^﻿/, ''));
                 } catch (err) {
                     showToast(t('toastNotValidJson'), 'warning');
                     return;
                 }
-                if (!data || typeof data !== 'object' ||
-                    !Array.isArray(data.drones) || !Array.isArray(data.batteries) || !Array.isArray(data.flights)) {
+                const parsed = parseBackup(data);
+                if (!parsed) {
                     showToast(t('toastNotFlyLogBackup'), 'warning');
                     return;
                 }
-
-                // Import additively with fresh IDs so nothing already stored is
-                // overwritten or lost, even if the backup came from another device.
-                const droneIdMap = {};
-                (data.drones || []).forEach(d => {
-                    const newId = 'uav-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-                    droneIdMap[d.id] = newId;
-                    state.drones.push({
-                        id: newId,
-                        name: d.name || t('unnamedDroneFallback'),
-                        model: d.model || '',
-                        flightHours: Number(d.flightHours) || 0,
-                        status: (typeof d.status === 'string' && d.status) || state.droneStatuses[0] || 'Ready'
-                    });
-                });
-
-                const batteryIdMap = {};
-                (data.batteries || []).forEach(b => {
-                    const newId = 'bat-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
-                    batteryIdMap[b.id] = newId;
-                    state.batteries.push({
-                        id: newId,
-                        name: b.name || t('unnamedBatteryFallback'),
-                        cycles: Number(b.cycles) || 0,
-                        flightHours: Number(b.flightHours) || 0,
-                        status: (typeof b.status === 'string' && b.status) || 'Good'
-                    });
-                });
-
-                (data.droneStatuses || []).forEach(st => {
-                    if (typeof st === 'string' && st && !state.droneStatuses.includes(st)) {
-                        state.droneStatuses.push(st);
-                    }
-                });
-
-                // Colors are keyed by status name; only fill in ones we don't
-                // already have a color for, so a locally-customized color always
-                // wins over whatever the imported backup had.
-                if (data.droneStatusColors && typeof data.droneStatusColors === 'object' && !Array.isArray(data.droneStatusColors)) {
-                    Object.keys(data.droneStatusColors).forEach(name => {
-                        const hex = data.droneStatusColors[name];
-                        if (typeof hex === 'string' && /^#[0-9a-fA-F]{6}$/.test(hex) && !state.droneStatusColors[name]) {
-                            state.droneStatusColors[name] = hex;
-                        }
-                    });
-                }
-
-                // Merge custom field definitions: dedupe by (label case-insensitive +
-                // type) against what's already here, reusing the existing field's id
-                // so imported values land in the same column instead of a duplicate
-                // one. A label collision with a different type gets a disambiguating
-                // suffix rather than silently mixing text and numeric values.
-                const fieldIdMap = {};
-                (data.customFields || []).forEach(cf => {
-                    if (!cf || typeof cf !== 'object') return;
-                    const label = typeof cf.label === 'string' ? cf.label.trim() : '';
-                    const type = cf.type === 'number' ? 'number' : 'text';
-                    if (!label) return;
-                    let existing = state.customFields.find(f => f.label.toLowerCase() === label.toLowerCase() && f.type === type);
-                    if (!existing) {
-                        const sameLabelOtherType = state.customFields.some(f => f.label.toLowerCase() === label.toLowerCase());
-                        existing = {
-                            id: 'cf-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-                            label: sameLabelOtherType ? `${label} (${type === 'number' ? 'Numeric' : 'Text'})` : label,
-                            type
-                        };
-                        state.customFields.push(existing);
-                    }
-                    fieldIdMap[cf.id] = existing.id;
-                });
-
-                let importedFlights = 0;
-                (data.flights || []).forEach(f => {
-                    const newDroneId = droneIdMap[f.droneId] || null;
-                    const newBatteryId = f.batteryId ? (batteryIdMap[f.batteryId] || null) : null;
-                    const customValues = {};
-                    if (f.customValues && typeof f.customValues === 'object') {
-                        Object.keys(f.customValues).forEach(oldFieldId => {
-                            const newFieldId = fieldIdMap[oldFieldId];
-                            if (!newFieldId) return;
-                            const targetField = state.customFields.find(cf => cf.id === newFieldId);
-                            const rawVal = f.customValues[oldFieldId];
-                            if (targetField && targetField.type === 'number') {
-                                customValues[newFieldId] = typeof rawVal === 'number' ? rawVal : (parseFloat(rawVal) || 0);
-                            } else {
-                                customValues[newFieldId] = typeof rawVal === 'string' ? rawVal : (rawVal != null ? String(rawVal) : '');
-                            }
-                        });
-                    }
-                    state.flights.push({
-                        id: 'flt-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
-                        droneId: newDroneId,
-                        droneName: f.droneName || f.drone || t('unknownAirframeFallback'),
-                        batteryId: newBatteryId,
-                        batteryName: f.batteryName || f.battery || '',
-                        startTime: f.startTime || '',
-                        endTime: f.endTime || '',
-                        duration: Number(f.duration) || 0,
-                        notes: typeof f.notes === 'string' ? f.notes : '',
-                        customValues
-                    });
-                    importedFlights++;
-                });
-
-                renderAll();
-                showToast(t('toastImportedSummary', { flights: importedFlights, drones: data.drones.length, batteries: data.batteries.length }), 'success');
+                openImportChoiceModal(parsed);
             };
             reader.readAsText(file);
         }
