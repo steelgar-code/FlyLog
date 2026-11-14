@@ -105,6 +105,7 @@
                 <i class="fa-solid fa-triangle-exclamation"></i>
                 <span data-i18n="offlineBadge">Offline — changes saved locally</span>
             </div>
+            <!-- Weather/GPS box disabled until it can show real data from the companion weather app.
             <div class="hidden md:flex items-center gap-3 px-3 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-xs">
                 <div class="flex items-center gap-1.5 text-amber-400">
                     <i class="fa-solid fa-sun"></i>
@@ -121,6 +122,7 @@
                     <span>GPS 18 <span data-i18n="unitSats">Sats</span></span>
                 </div>
             </div>
+            -->
 
             <select class="lang-select" id="langSelect" data-i18n-aria-label="langSelectorAriaLabel" aria-label="Language">
                 <option value="en">English</option>
@@ -524,7 +526,7 @@
     </div>
 
     <!-- MODAL 1: LOG NEW FLIGHT -->
-    <div id="modalLogFlight" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalLogFlight" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-lg bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
@@ -607,7 +609,7 @@
     </div>
 
     <!-- MODAL 2: ADD / EDIT AIRFRAME -->
-    <div id="modalDrone" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalDrone" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
@@ -651,7 +653,7 @@
     </div>
 
     <!-- MODAL 3: MANAGE DRONE STATUS LIST -->
-    <div id="modalManageStatuses" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalManageStatuses" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
@@ -682,7 +684,7 @@
     </div>
 
     <!-- MODAL: MANAGE CUSTOM FIELDS -->
-    <div id="modalManageFields" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalManageFields" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
@@ -716,7 +718,7 @@
     </div>
 
     <!-- MODAL 4: ADD / EDIT BATTERY -->
-    <div id="modalBattery" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div id="modalBattery" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center border-b border-slate-800 pb-3">
                 <div class="flex items-center gap-2">
@@ -762,7 +764,7 @@
     </div>
 
     <!-- MODAL 5: CONFIRM DESTRUCTIVE ACTION -->
-    <div id="modalConfirm" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
+    <div id="modalConfirm" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[60] flex items-center justify-center p-4 hidden">
         <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <div class="flex items-center gap-2">
                 <div class="p-2 rounded-lg bg-rose-950/60 border border-rose-800/40 text-rose-400">
@@ -996,6 +998,7 @@
                 addNewDroneTitle: "Add New Drone",
                 batteryLabelOptional: "Battery Label (Optional)",
                 noneStandardOption: "-- None / Standard --",
+                deletedItemMarker: "(deleted)",
                 addNewBatteryTitle: "Add New Battery",
                 autoCalcLabel: "Auto-Calculator (Fill any 2 fields to derive the 3rd)",
                 flightTimeOrderErrorMsg: "Flight End must be after Flight Start.",
@@ -1207,6 +1210,7 @@
                 addNewDroneTitle: "Додати новий дрон",
                 batteryLabelOptional: "Мітка батареї (необов'язково)",
                 noneStandardOption: "-- Немає / Стандартна --",
+                deletedItemMarker: "(видалено)",
                 addNewBatteryTitle: "Додати нову батарею",
                 autoCalcLabel: "Автокалькулятор (заповніть будь-які 2 поля, щоб визначити третє)",
                 flightTimeOrderErrorMsg: "Час завершення польоту має бути пізніше за час початку.",
@@ -1424,6 +1428,7 @@
                 addNewDroneTitle: "Adicionar novo drone",
                 batteryLabelOptional: "Etiqueta da bateria (opcional)",
                 noneStandardOption: "-- Nenhuma / Padrão --",
+                deletedItemMarker: "(excluído)",
                 addNewBatteryTitle: "Adicionar nova bateria",
                 autoCalcLabel: "Calculadora automática (preencha 2 campos quaisquer para derivar o 3º)",
                 flightTimeOrderErrorMsg: "O fim do voo deve ser depois do início do voo.",
@@ -2116,10 +2121,11 @@
             const mo = totalMonths % 12;
 
             const DAY = 24 * 60 * 60 * 1000, HOUR = 60 * 60 * 1000, MIN = 60 * 1000;
-            let remainingMs = toDate.getTime() - addMonths(fromDate, totalMonths).getTime();
+            // Round to whole minutes first, then split, so 59.5 min never shows as "60m".
+            let remainingMs = Math.round((toDate.getTime() - addMonths(fromDate, totalMonths).getTime()) / MIN) * MIN;
             const d = Math.floor(remainingMs / DAY); remainingMs -= d * DAY;
             const h = Math.floor(remainingMs / HOUR); remainingMs -= h * HOUR;
-            const mi = Math.round(remainingMs / MIN);
+            const mi = remainingMs / MIN;
 
             return { y, mo, d, h, mi };
         }
@@ -2149,7 +2155,7 @@
         function formatApproxDuration(ms) {
             if (!(ms > 0)) return '0m';
             const MIN = 60 * 1000, HOUR = 60 * MIN, DAY = 24 * HOUR, YEAR = 365.25 * DAY, MONTH = YEAR / 12;
-            let remaining = ms;
+            let remaining = Math.round(ms / MIN) * MIN;
             const y = Math.floor(remaining / YEAR); remaining -= y * YEAR;
             const mo = Math.floor(remaining / MONTH); remaining -= mo * MONTH;
             const d = Math.floor(remaining / DAY); remaining -= d * DAY;
@@ -2172,8 +2178,9 @@
             let totalMins = 0;
             state.flights.forEach(f => { totalMins += (f.duration || 0); });
 
-            const hours = Math.floor(totalMins / 60);
-            const mins = Math.round(totalMins % 60);
+            const roundedMins = Math.round(totalMins);
+            const hours = Math.floor(roundedMins / 60);
+            const mins = roundedMins % 60;
 
             document.getElementById('statTotalHours').textContent = `${hours}h ${mins}m`;
             document.getElementById('statTotalFlights').textContent = state.flights.length;
@@ -2222,9 +2229,14 @@
             }
         }
 
+        // 'YYYY-MM-DD' for the local calendar day (toISOString would use UTC).
+        function formatLocalDate(d) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
         function setPresetDateRange(preset) {
             const now = new Date();
-            const endDateStr = now.toISOString().split('T')[0];
+            const endDateStr = formatLocalDate(now);
             let startDate = new Date();
 
             if (preset === '7d') {
@@ -2235,7 +2247,7 @@
                 startDate = new Date(now.getFullYear(), now.getMonth(), 1);
             }
 
-            document.getElementById('filterStartDate').value = startDate.toISOString().split('T')[0];
+            document.getElementById('filterStartDate').value = formatLocalDate(startDate);
             document.getElementById('filterEndDate').value = endDateStr;
             renderFlightTables();
         }
@@ -2694,6 +2706,10 @@
             });
         }
 
+        // The flight currently open in the Log Flight modal (edit mode), so its
+        // deleted drone/battery can still be offered as a preselected option.
+        let editingFlight = null;
+
         function populateDropdowns() {
             // Populate Drone Selects
             const flightDroneSelect = document.getElementById('flightDrone');
@@ -2702,6 +2718,9 @@
             if (flightDroneSelect) {
                 const currVal = flightDroneSelect.value;
                 flightDroneSelect.innerHTML = state.drones.map(d => `<option value="${d.id}">${escapeHtml(d.name)}</option>`).join('');
+                if (editingFlight && editingFlight.droneId && !state.drones.some(d => d.id === editingFlight.droneId)) {
+                    flightDroneSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(editingFlight.droneId)}">${escapeHtml(editingFlight.droneName || editingFlight.droneId)} ${escapeHtml(t('deletedItemMarker'))}</option>`);
+                }
                 if (currVal) flightDroneSelect.value = currVal;
             }
 
@@ -2716,6 +2735,9 @@
             if (flightBatterySelect) {
                 const currVal = flightBatterySelect.value;
                 flightBatterySelect.innerHTML = `<option value="">${t('noneStandardOption')}</option>` + state.batteries.map(b => `<option value="${b.id}">${escapeHtml(b.name)}</option>`).join('');
+                if (editingFlight && editingFlight.batteryId && !state.batteries.some(b => b.id === editingFlight.batteryId)) {
+                    flightBatterySelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(editingFlight.batteryId)}">${escapeHtml(editingFlight.batteryName || editingFlight.batteryId)} ${escapeHtml(t('deletedItemMarker'))}</option>`);
+                }
                 if (currVal) flightBatterySelect.value = currVal;
             }
 
@@ -2735,11 +2757,17 @@
                 const batteryId = document.getElementById('flightBattery').value;
                 const startTime = document.getElementById('flightStartTime').value;
                 const endTime = document.getElementById('flightEndTime').value;
-                const duration = parseFloat(document.getElementById('flightDuration').value) || 0;
+                let duration = parseFloat(document.getElementById('flightDuration').value) || 0;
                 const notes = document.getElementById('flightNotes').value;
 
-                const drone = state.drones.find(d => d.id === droneId);
-                const battery = batteryId ? state.batteries.find(b => b.id === batteryId) : null;
+                const editing = editId ? state.flights.find(f => f.id === editId) : null;
+                // A drone/battery deleted since the flight was logged keeps its stored id and name.
+                const drone = state.drones.find(d => d.id === droneId)
+                    || (editing && droneId && editing.droneId === droneId ? { id: editing.droneId, name: editing.droneName } : null);
+                const battery = batteryId
+                    ? (state.batteries.find(b => b.id === batteryId)
+                        || (editing && editing.batteryId === batteryId ? { id: editing.batteryId, name: editing.batteryName } : null))
+                    : null;
 
                 if (!drone) {
                     showToast(t('toastSelectAirframe'), 'warning');
@@ -2754,6 +2782,12 @@
                     document.getElementById('flightTimeOrderError')?.classList.remove('hidden');
                     document.getElementById('flightEndTime').focus();
                     return;
+                }
+
+                // Derive a missing duration from valid start/end times.
+                if (!(duration > 0) && startTime && endTime) {
+                    const diffMins = (new Date(endTime) - new Date(startTime)) / 60000;
+                    if (diffMins > 0) duration = Math.round(diffMins * 10) / 10;
                 }
 
                 const customValues = collectCustomFieldValues();
@@ -2925,14 +2959,19 @@
         // Close whichever modal is open when the user clicks its backdrop or
         // presses Escape, without losing data on accidental clicks inside it.
         function setupModalDismissal() {
-            document.querySelectorAll('[id^="modal"]').forEach(modal => {
+            document.querySelectorAll('[data-modal]').forEach(modal => {
+                // Only close when the press AND the release both landed on the
+                // backdrop, so dragging a text selection out of the dialog is safe.
+                let pressStartedOnBackdrop = false;
+                modal.addEventListener('mousedown', (e) => { pressStartedOnBackdrop = e.target === modal; });
                 modal.addEventListener('click', (e) => {
-                    if (e.target === modal) modal.classList.add('hidden');
+                    if (e.target === modal && pressStartedOnBackdrop) modal.classList.add('hidden');
+                    pressStartedOnBackdrop = false;
                 });
             });
             document.addEventListener('keydown', (e) => {
                 if (e.key !== 'Escape') return;
-                document.querySelectorAll('[id^="modal"]').forEach(modal => {
+                document.querySelectorAll('[data-modal]').forEach(modal => {
                     if (!modal.classList.contains('hidden')) modal.classList.add('hidden');
                 });
             });
@@ -2941,6 +2980,7 @@
         function openLogFlightModal(flight = null) {
             document.getElementById('formLogFlight').reset();
             flightTimeDerivedField = null;
+            editingFlight = flight;
             document.getElementById('flightTimeOrderError')?.classList.add('hidden');
             populateDropdowns();
             renderCustomFieldInputs();
@@ -3275,7 +3315,7 @@
             for (let i = days - 1; i >= 0; i--) {
                 const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
                 buckets.push({
-                    key: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`,
+                    key: formatLocalDate(d),
                     label: `${d.getMonth() + 1}/${d.getDate()}`,
                     mins: 0
                 });
