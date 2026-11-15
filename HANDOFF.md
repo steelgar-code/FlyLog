@@ -1,10 +1,10 @@
 # FlyLog handoff: FlyStock exchange and storage migration
 
 Written 15 Nov 2026, revised the same day after the owner simplified the feature. Describes
-branch `ccr-dca4a52c-yl3ehm` in FlyLog and FlyStock (not yet merged to `main`; FlyLog `main` is
-at `99f8604`, FlyStock `main` at `cbd12f9`). FlySky was cloned but not analysed.
+`main` of FlyLog and FlyStock after the merge of 15 Nov 2026 (FlyStock `main` at `8b0ec7a`).
+FlySky was cloned but not analysed.
 
-Section 4 is implemented on the branch. Section 5 (IndexedDB) is a plan only.
+Section 4 is implemented and merged. Section 5 (IndexedDB) is a plan only.
 
 ## 1. Where things stand
 
@@ -25,9 +25,10 @@ Shipped to `main` on 14 Nov 2026:
   show real data.
 - 149 Playwright tests, Chromium only.
 
-On branch `ccr-dca4a52c-yl3ehm`, 15 Nov 2026 (see section 4): airframes can be added from
+Merged to `main` on 15 Nov 2026 (see section 4): airframes can be added from
 FlyStock and stay linked to their item; linked airframes have deep links into FlyStock's edit
-and remove forms; FlyStock handles those links and has its first test suite.
+and remove forms; FlyStock handles those links, keeps item IDs through export and import, and
+has its first test suite. FlyLog has 199 tests, FlyStock 40.
 
 Decisions still needed from the owner are in section 7.
 
@@ -89,7 +90,7 @@ Default drone statuses: Ready, Maintenance, In Inspection, Repairing, Retired.
 
 ## 3. FlyStock facts
 
-From a read-only analysis of FlyStock `index.html` at `cbd12f9`.
+From a read-only analysis of FlyStock `index.html` at `cbd12f9`, before the work of section 4.
 
 - **Storage:** localStorage only. One key, `stockroom_inventory_v1`, holds
   `{ types: [name, ...], items: [...] }`. Language is under `flystock-lang`.
@@ -104,10 +105,10 @@ From a read-only analysis of FlyStock `index.html` at `cbd12f9`.
   change. There is no `storage`, focus or visibility listener. A write made by another app while
   FlyStock is open is lost on FlyStock's next save.
 - **Import/export (at `cbd12f9`):** a plain-text format without item IDs; import is additive and
-  assigns new IDs. A raw-storage JSON download also exists. The branch adds IDs, see section 4.
-- **Cross-app hooks (at `cbd12f9`):** none, apart from footer links to the sibling apps. The
-  branch adds the deep links of section 4.
-- **Tests (at `cbd12f9`):** none. The branch adds a Playwright suite set up like FlyLog's.
+  assigns new IDs. A raw-storage JSON download also exists. Section 4 adds IDs.
+- **Cross-app hooks (at `cbd12f9`):** none, apart from footer links to the sibling apps. Section
+  4 adds deep links.
+- **Tests (at `cbd12f9`):** none. There is now a Playwright suite set up like FlyLog's.
 
 ## 4. Feature: airframes from FlyStock, deep links back (implemented)
 
@@ -282,18 +283,16 @@ Each phase is a small batch with its own tests.
 
 | Phase | Repository | Content | State |
 |---|---|---|---|
-| 1 | FlyLog | FlyStock reader, picker, link upkeep, unlink, backup support | Done on the branch |
-| 2 | Both | Deep links from FlyLog into FlyStock's edit and remove forms; FlyStock test suite | Done on the branch |
-| 3 | FlyStock | Item IDs in text export and import; safe handling of stored data without IDs | Done on the branch |
+| 1 | FlyLog | FlyStock reader, picker, link upkeep, unlink, backup support | Done |
+| 2 | Both | Deep links from FlyLog into FlyStock's edit and remove forms; FlyStock test suite | Done |
+| 3 | FlyStock | Item IDs in text export and import; safe handling of stored data without IDs | Done |
 | 4 | Both | Storage layer refactor, no behaviour change | Open |
 | 5 | Both | IndexedDB-aware readers, then migrate FlyLog, then FlyStock, then drop legacy keys | Open |
 | 6 | FlySky, FlyLog | Analyse FlySky; publish last known weather and bring back FlyLog's header box | Open |
 
 ## 7. Decisions needed from the owner
 
-1. **Merging.** The branch `ccr-dca4a52c-yl3ehm` in FlyLog and FlyStock is not merged. Publish
-   FlyStock first or together with FlyLog, otherwise the new links open FlyStock without a form.
-2. **Timing of the IndexedDB migration.** Recommended: only when size or attachments require it.
+1. **Timing of the IndexedDB migration.** Recommended: only when size or attachments require it.
 
 Decided on 15 Nov 2026: no after-flight block and no messages (section 4); the feature does not
 have to work between installed apps on iOS; backup Merge matches by FlyStock link first.
