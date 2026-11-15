@@ -137,7 +137,8 @@ test.describe('edit dialog and unlink', () => {
     const stock = ACTIVE();
     const before = JSON.stringify(stock);
     await openFleet(page, { fixture: linkedFixture(), stock });
-    await page.locator('#btnAddFromStock').click();
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#btnDroneFromStock').click();
     await expect(page.locator('#stockPickerEmptyMsg')).toContainText('Nothing to add');
     await page.locator('#btnCancelStockPicker').click();
 
@@ -158,7 +159,8 @@ test.describe('edit dialog and unlink', () => {
     await expect(badge(page, 'Alpha Quad')).toHaveCount(0);
 
     await page.locator('#formDrone button[type="submit"]').click();
-    await page.locator('#btnAddFromStock').click();
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#btnDroneFromStock').click();
     await expect(page.locator('#stockPickerList label')).toHaveText([/Alpha Quad/]);
     expect(await raw(page)).toBe(before);
   });
@@ -275,5 +277,216 @@ test.describe('deep links into FlyStock', () => {
     await expect(page.locator('#stockOpenItem')).toHaveText('Відкрити у FlyStock');
     await expect(page.locator('#stockRemoveItem')).toHaveText('Видалити у FlyStock');
     expect(await page.locator('#stockOpenItem').getAttribute('title')).toContain('FlyStock');
+  });
+});
+
+// ---- Link an existing airframe to a FlyStock item (single-select picker mode) ----
+const picker = (page) => page.locator('#modalStockPicker');
+const rows = (page) => page.locator('#stockPickerList label');
+const rowTexts = (page) => rows(page).locator('span.font-medium').allTextContents();
+const pickRow = (page, text) => rows(page).filter({ hasText: text }).locator('input').check();
+const linkBtn = (page) => page.locator('#btnLinkStock');
+const confirmBtn = (page) => page.locator('#btnStockAddSelected');
+const CHARLIE = () => inv([item('s-c', 'Charlie Stock'), item('s-d', 'Delta Stock'), item('s-x', 'Gone Stock', { status: 'removed' }), item('s-a', 'Alpha Quad')]);
+const fx2 = () => { const fx = makeFixture(); Object.assign(fx.drones[0], { stockId: 's-a', stockName: 'Alpha Quad' }); return fx; };
+
+test.describe('link existing airframe', () => {
+  test('action only for unlinked airframes in edit, never in New Airframe', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    await openEditDialog(page, 'Alpha Quad');
+    await expect(linkBtn(page)).toBeHidden();
+    await page.locator('#btnCancelDrone').click();
+    await openEditDialog(page, 'Charlie Mini');
+    await expect(linkBtn(page)).toBeVisible();
+    await expect(linkBtn(page)).toContainText('Link to FlyStock item');
+    await page.locator('#btnCancelDrone').click();
+    await page.locator('#btnAddDroneModal').click();
+    await expect(linkBtn(page)).toBeHidden();
+  });
+
+  test('single selection, disabled until chosen, title names the airframe, items offered correctly', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    await openEditDialog(page, 'Charlie Mini');
+    await linkBtn(page).click();
+    await expect(picker(page)).toBeVisible();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    await expect(page.locator('#modalStockPickerTitle')).toHaveText('Link "Charlie Mini" to a FlyStock item');
+    await expect(confirmBtn(page)).toHaveText('Link');
+    await expect(confirmBtn(page)).toBeDisabled();
+    expect((await rowTexts(page)).sort()).toEqual(['Charlie Stock', 'Delta Stock']);
+    expect(await rows(page).locator('input').first().getAttribute('type')).toBe('radio');
+    await pickRow(page, 'Charlie Stock');
+    await expect(confirmBtn(page)).toBeEnabled();
+    await pickRow(page, 'Delta Stock');
+    await expect(rows(page).locator('input:checked')).toHaveCount(1);
+    await expect(rows(page).filter({ hasText: 'Delta Stock' }).locator('input')).toBeChecked();
+    await page.locator('#stockSearch').fill('delta');
+    expect(await rowTexts(page)).toEqual(['Delta Stock']);
+  });
+
+  test('linking stores only stockId/stockName, refreshes the dialog, badge, hrefs; stock untouched', async ({ page }) => {
+    const stock = CHARLIE();
+    const before = JSON.stringify(stock);
+    await openFleet(page, { fixture: fx2(), stock });
+    const flightsBefore = await store(page, 'flights');
+    const dBefore = (await store(page, 'drones'))[2];
+    await openEditDialog(page, 'Charlie Mini');
+    await linkBtn(page).click();
+    await pickRow(page, 'Delta Stock');
+    await confirmBtn(page).click();
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    await expect(page.locator('#droneStockLinkText')).toContainText('Delta Stock');
+    await expect(page.locator('#stockOpenItem')).toHaveAttribute('href', `${BASE}#edit=s-d`);
+    await expect(page.locator('#stockRemoveItem')).toHaveAttribute('href', `${BASE}#remove=s-d`);
+    await expect(page.locator('#btnUnlinkStock')).toBeVisible();
+    await expect(linkBtn(page)).toBeHidden();
+    const dAfter = (await store(page, 'drones'))[2];
+    expect(dAfter).toEqual({ ...dBefore, stockId: 's-d', stockName: 'Delta Stock' });
+    expect(await store(page, 'flights')).toEqual(flightsBefore);
+    await expect(badge(page, 'Charlie Mini')).toBeVisible();
+    expect(await raw(page)).toBe(before);
+    // no longer offered
+    await page.locator('#btnCancelDrone').click();
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#btnDroneFromStock').click();
+    expect(await rowTexts(page)).toEqual(['Charlie Stock']);
+  });
+
+  test('cancel changes nothing; Escape and backdrop close only the picker', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    const dBefore = await store(page, 'drones');
+    await openEditDialog(page, 'Charlie Mini');
+    await linkBtn(page).click();
+    await pickRow(page, 'Charlie Stock');
+    await page.locator('#btnCancelStockPicker').click();
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    await expect(linkBtn(page)).toBeVisible();
+    await linkBtn(page).click();
+    await page.keyboard.press('Escape');
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    await linkBtn(page).click();
+    await picker(page).click({ position: { x: 3, y: 3 } });
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    expect(await store(page, 'drones')).toEqual(dBefore);
+  });
+
+  test('unsaved form text survives linking and is only persisted on Save', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    await openEditDialog(page, 'Charlie Mini');
+    await page.locator('#droneName').fill('Typed Name');
+    await page.locator('#droneHours').fill('9.5');
+    await linkBtn(page).click();
+    await pickRow(page, 'Charlie Stock');
+    await confirmBtn(page).click();
+    await expect(page.locator('#droneName')).toHaveValue('Typed Name');
+    await expect(page.locator('#droneHours')).toHaveValue('9.5');
+    let d = (await store(page, 'drones'))[2];
+    expect(d).toMatchObject({ name: 'Charlie Mini', flightHours: makeFixture().drones[2].flightHours, stockId: 's-c' });
+    await page.locator('#formDrone button[type="submit"]').click();
+    d = (await store(page, 'drones'))[2];
+    expect(d).toMatchObject({ name: 'Typed Name', flightHours: 9.5, stockId: 's-c', stockName: 'Charlie Stock' });
+  });
+
+  test('unlink then link again; add flow is multi-select afterwards', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    await openEditDialog(page, 'Alpha Quad');
+    await page.locator('#btnUnlinkStock').click();
+    await confirmDialog(page, true);
+    await expect(linkBtn(page)).toBeVisible();
+    await linkBtn(page).click();
+    expect((await rowTexts(page)).sort()).toEqual(['Alpha Quad', 'Charlie Stock', 'Delta Stock']);
+    await pickRow(page, 'Alpha Quad');
+    await confirmBtn(page).click();
+    expect((await store(page, 'drones'))[0]).toMatchObject({ stockId: 's-a', stockName: 'Alpha Quad' });
+    await page.locator('#btnCancelDrone').click();
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#btnDroneFromStock').click();
+    await expect(page.locator('#modalStockPickerTitle')).toHaveText('Add airframes from FlyStock');
+    await expect(confirmBtn(page)).toContainText('Add selected');
+    expect(await rows(page).locator('input').first().getAttribute('type')).toBe('checkbox');
+    await pickRow(page, 'Charlie Stock');
+    await pickRow(page, 'Delta Stock');
+    await expect(rows(page).locator('input:checked')).toHaveCount(2);
+  });
+
+  test('refuses if the item got linked, or removed, meanwhile', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE() });
+    await openEditDialog(page, 'Charlie Mini');
+    await linkBtn(page).click();
+    await pickRow(page, 'Delta Stock');
+    await page.evaluate((k) => {
+      const v = JSON.parse(localStorage.getItem(k));
+      v.items.find((i) => i.id === 's-d').status = 'removed';
+      localStorage.setItem(k, JSON.stringify(v));
+    }, KEY);
+    await confirmBtn(page).click();
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#toastContainer')).toContainText('no longer available');
+    expect((await store(page, 'drones'))[2]).not.toHaveProperty('stockId');
+    await expect(linkBtn(page)).toBeVisible();
+  });
+
+  test('empty state when FlyStock has no data', async ({ page }) => {
+    await openFleet(page, { fixture: fx2() });
+    await openEditDialog(page, 'Charlie Mini');
+    await linkBtn(page).click();
+    await expect(page.locator('#stockPickerEmpty')).toBeVisible();
+    await expect(page.locator('#stockPickerEmptyMsg')).toContainText('No FlyStock inventory');
+    await expect(confirmBtn(page)).toBeDisabled();
+    expect(await raw(page)).toBeNull();
+  });
+
+  test('crafted description is text in the picker, title and dialog after linking', async ({ page }) => {
+    const evil = '<img src=x onerror=window.__xss=1>';
+    const stock = inv([item('s-e', evil)]);
+    const before = JSON.stringify(stock);
+    const fx = makeFixture();
+    fx.drones[2].name = evil;
+    await openFleet(page, { fixture: fx, stock });
+    await openEditDialog(page, evil);
+    await linkBtn(page).click();
+    await expect(page.locator('#modalStockPickerTitle')).toContainText(evil);
+    await expect(rows(page).first()).toContainText(evil);
+    await pickRow(page, evil);
+    await confirmBtn(page).click();
+    await expect(page.locator('#droneStockLinkText')).toContainText(evil);
+    expect(await page.locator('#modalDrone img, #modalStockPicker img, #fleetGrid img').count()).toBe(0);
+    expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+    expect(await raw(page)).toBe(before);
+  });
+
+  test('uk labels for both new actions', async ({ page }) => {
+    await openFleet(page, { fixture: fx2(), stock: CHARLIE(), lang: 'uk' });
+    await page.locator('#btnAddDroneModal').click();
+    await expect(page.locator('#btnDroneFromStock')).toContainText('Додати з FlyStock…');
+    await page.locator('#btnCancelDrone').click();
+    await openEditDialog(page, 'Charlie Mini');
+    await expect(linkBtn(page)).toContainText('Пов’язати з позицією FlyStock…');
+    await linkBtn(page).click();
+    await expect(confirmBtn(page)).toContainText('Пов’язати');
+  });
+
+  test('modals do not overflow horizontally on a phone', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, { fixture: fx2(), stock: CHARLIE() });
+    await page.locator('#mobileMenuBtn').click();
+    await page.locator('#sidebar [data-nav="fleet"]').click();
+    await expect(page.locator('#viewFleet')).toBeVisible();
+    const noOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth &&
+      [...document.querySelectorAll('#modalDrone > div, #modalStockPicker > div')].every((d) => d.scrollWidth <= d.clientWidth));
+    await page.locator('#btnAddDroneModal').click();
+    expect(await noOverflow()).toBe(true);
+    await page.locator('#btnCancelDrone').click();
+    await openEditDialog(page, 'Charlie Mini');
+    expect(await noOverflow()).toBe(true);
+    await linkBtn(page).click();
+    await pickRow(page, 'Charlie Stock');
+    expect(await noOverflow()).toBe(true);
+    await confirmBtn(page).click();
+    expect(await noOverflow()).toBe(true);
   });
 });

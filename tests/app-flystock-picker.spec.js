@@ -1,5 +1,5 @@
 const {
-  test, expect, CONTEXT_OPTIONS, openApp, makeFixture, store, goTo, optionLabels, fleetCard, cardNames,
+  test, expect, CONTEXT_OPTIONS, openApp, makeFixture, store, goTo, optionLabels, fleetCard, cardNames, expand,
 } = require('./support/app');
 
 test.use(CONTEXT_OPTIONS);
@@ -12,11 +12,16 @@ const picker = (page) => page.locator('#modalStockPicker');
 const rows = (page) => page.locator('#stockPickerList label');
 const rowTexts = (page) => rows(page).locator('span.font-medium').allTextContents();
 
+// The picker is reached through the New Airframe popup (no standalone Fleet button).
+async function openPickerFromNewAirframe(page) {
+  await page.locator('#btnAddDroneModal').click();
+  await page.locator('#btnDroneFromStock').click();
+  await expect(picker(page)).toBeVisible();
+}
 async function openFromFleet(page, opts) {
   await openApp(page, opts);
   await goTo(page, 'fleet');
-  await page.locator('#btnAddFromStock').click();
-  await expect(picker(page)).toBeVisible();
+  await openPickerFromNewAirframe(page);
 }
 const pick = (page, description) => rows(page).filter({ hasText: description }).locator('input').check();
 
@@ -89,7 +94,7 @@ test.describe('listing and filtering', () => {
     expect(await page.evaluate(() => localStorage.getItem('flylog_stock_type_filter'))).toBe('Plane');
     await page.reload();
     await goTo(page, 'fleet');
-    await page.locator('#btnAddFromStock').click();
+    await openPickerFromNewAirframe(page);
     await expect(page.locator('#stockTypeFilter')).toHaveValue('Plane');
     expect(await rowTexts(page)).toEqual(['Cessna Foam']);
   });
@@ -100,7 +105,7 @@ test.describe('listing and filtering', () => {
     // seeding clears storage once per tab, so set it explicitly and reopen
     await page.evaluate(() => localStorage.setItem('flylog_stock_type_filter', 'Gone Type'));
     await page.locator('#btnCancelStockPicker').click();
-    await page.locator('#btnAddFromStock').click();
+    await openPickerFromNewAirframe(page);
     await expect(page.locator('#stockTypeFilter')).toHaveValue('all');
     await expect(rows(page)).toHaveCount(3);
   });
@@ -109,6 +114,58 @@ test.describe('listing and filtering', () => {
     await openFromFleet(page, { stock: sample() });
     await page.keyboard.press('Escape');
     await expect(picker(page)).toBeHidden();
+  });
+});
+
+test.describe('entry point: New Airframe popup', () => {
+  test('no standalone button on the Fleet tab', async ({ page }) => {
+    await openApp(page, { stock: sample() });
+    await goTo(page, 'fleet');
+    await expect(page.locator('#btnAddFromStock')).toHaveCount(0);
+    await expect(page.locator('#tab-fleet, #fleet').getByText('Add from FlyStock')).toHaveCount(0);
+  });
+
+  test('action is shown for a new airframe and absent when editing', async ({ page }) => {
+    await openApp(page, { stock: sample() });
+    await goTo(page, 'fleet');
+    await page.locator('#btnAddDroneModal').click();
+    await expect(page.locator('#btnDroneFromStock')).toBeVisible();
+    await expect(page.locator('#btnDroneFromStock')).toContainText('Add from FlyStock');
+    await expect(page.locator('#droneFromStockRow')).toContainText('or pick existing items from FlyStock');
+    await page.locator('#btnCancelDrone').click();
+    const card = await expand(fleetCard(page, 'Alpha Quad'));
+    await card.locator('[data-edit]').click();
+    await expect(page.locator('#modalDrone')).toBeVisible();
+    await expect(page.locator('#btnDroneFromStock')).toBeHidden();
+  });
+
+  test('using it closes the airframe modal and creates nothing; adding works', async ({ page }) => {
+    await openApp(page, { stock: sample() });
+    await goTo(page, 'fleet');
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#droneName').fill('Typed but unsaved');
+    await page.locator('#btnDroneFromStock').click();
+    await expect(page.locator('#modalDrone')).toBeHidden();
+    await expect(picker(page)).toBeVisible();
+    expect(await store(page, 'drones')).toHaveLength(4);
+    await pick(page, 'Bravo Copy');
+    await page.locator('#btnStockAddSelected').click();
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeHidden();
+    const drones = await store(page, 'drones');
+    expect(drones).toHaveLength(5);
+    expect(drones[4]).toMatchObject({ name: 'Bravo Copy', stockId: 's-2' });
+  });
+
+  test('cancelling the picker leaves no modal open and adds nothing', async ({ page }) => {
+    await openApp(page, { stock: sample() });
+    await goTo(page, 'fleet');
+    await openPickerFromNewAirframe(page);
+    await page.locator('#btnCancelStockPicker').click();
+    await expect(picker(page)).toBeHidden();
+    await expect(page.locator('#modalDrone')).toBeHidden();
+    await expect(page.locator('[data-modal]:visible')).toHaveCount(0);
+    expect(await store(page, 'drones')).toHaveLength(4);
   });
 });
 
@@ -133,7 +190,7 @@ test.describe('adding', () => {
     await expect(fleetCard(page, 'Alpha Copy').locator('[data-stock-badge]')).toBeVisible();
     await expect(fleetCard(page, 'Alpha Quad').locator('[data-stock-badge]')).toHaveCount(0);
 
-    await page.locator('#btnAddFromStock').click();
+    await openPickerFromNewAirframe(page);
     expect(await rowTexts(page)).toEqual(['Bravo Copy']);
   });
 
