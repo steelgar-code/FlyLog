@@ -1,5 +1,5 @@
 const {
-  test, expect, CONTEXT_OPTIONS, openApp, store, goTo, optionLabels, fleetCard, cardNames,
+  test, expect, CONTEXT_OPTIONS, openApp, makeFixture, store, goTo, optionLabels, fleetCard, cardNames,
 } = require('./support/app');
 
 test.use(CONTEXT_OPTIONS);
@@ -178,6 +178,24 @@ test.describe('adding', () => {
     await page.locator('#flightDrone').selectOption({ label: 'Add from FlyStock…' });
     await page.locator('#btnCancelStockPicker').click();
     await expect(page.locator('#flightDrone')).toHaveValue('uav-bravo');
+  });
+
+  test('with no airframes the dropdown entry still opens the picker and the first flight can be logged', async ({ page }) => {
+    await openApp(page, { fixture: { ...makeFixture(), drones: [], flights: [] }, stock: sample() });
+    await page.locator('#btnNewFlightHeader').click();
+    const sel = page.locator('#flightDrone');
+    await expect(sel).toHaveValue('');
+    await sel.selectOption({ label: 'Add from FlyStock…' });
+    await expect(picker(page)).toBeVisible();
+    await page.locator('#btnCancelStockPicker').click();
+    await expect(sel).toHaveValue('');
+    await sel.selectOption({ label: 'Add from FlyStock…' });
+    await pick(page, 'Alpha Copy');
+    await page.locator('#btnStockAddSelected').click();
+    const drones = await store(page, 'drones');
+    expect(drones).toHaveLength(1);
+    await expect(sel).toHaveValue(drones[0].id);
+    await expect(sel.locator('option')).toHaveText(['Alpha Copy', 'Add from FlyStock…']);
   });
 });
 

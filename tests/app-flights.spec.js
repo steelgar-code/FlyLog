@@ -67,7 +67,8 @@ test.describe('log a flight', () => {
   test('airframe is required: cannot save without a drone', async ({ page }) => {
     await openApp(page, { fixture: { ...makeFixture(), drones: [], flights: [] } });
     await page.locator('#btnNewFlightHeader').click();
-    await expect(page.locator('#flightDrone option')).toHaveCount(0);
+    await expect(page.locator('#flightDrone option')).toHaveText(['—', 'Add from FlyStock…']);
+    await expect(page.locator('#flightDrone')).toHaveValue('');
     await page.locator('#flightNotes').fill('no drone');
     await page.locator('#formLogFlight button[type="submit"]').click();
     await expect(page.locator('#modalLogFlight')).toBeVisible();
@@ -87,7 +88,7 @@ test.describe('log a flight', () => {
   test('airframe and battery dropdowns list fleet items; battery is optional', async ({ page }) => {
     await openApp(page);
     await page.locator('#btnNewFlightHeader').click();
-    await expect(page.locator('#flightDrone option')).toHaveText(['Alpha Quad', 'Bravo Hex', 'Charlie Mini', 'Delta Spare']);
+    await expect(page.locator('#flightDrone option')).toHaveText(['Alpha Quad', 'Bravo Hex', 'Charlie Mini', 'Delta Spare', 'Add from FlyStock…']);
     await expect(page.locator('#flightBattery option')).toHaveCount(4); // none + 3
     await fillFlightForm(page, { drone: 'Delta Spare', start: fmt(hoursAgo(2)), duration: 10, notes: 'no battery' });
     await page.locator('#formLogFlight button[type="submit"]').click();

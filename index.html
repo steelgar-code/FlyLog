@@ -3053,6 +3053,11 @@
                 if (editingFlight && editingFlight.droneId && !state.drones.some(d => d.id === editingFlight.droneId)) {
                     flightDroneSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(editingFlight.droneId)}">${escapeHtml(editingFlight.droneName || editingFlight.droneId)} ${escapeHtml(t('deletedItemMarker'))}</option>`);
                 }
+                // With no airframe to choose, a blank placeholder keeps the picker entry
+                // from being the default selection (it could then never fire `change`).
+                if (!flightDroneSelect.options.length) {
+                    flightDroneSelect.insertAdjacentHTML('beforeend', '<option value="" disabled selected hidden>—</option>');
+                }
                 // Last entry: opens the FlyStock picker. Never a real airframe id.
                 flightDroneSelect.insertAdjacentHTML('beforeend', `<option value="${STOCK_PICKER_SENTINEL}">${escapeHtml(t('stockAddBtn'))}</option>`);
                 if (currVal && currVal !== STOCK_PICKER_SENTINEL) flightDroneSelect.value = currVal;
@@ -3282,8 +3287,9 @@
 
         // Generic confirmation dialog used before any destructive action.
         let pendingConfirmAction = null;
-        function showConfirm(message, onConfirm) {
+        function showConfirm(message, onConfirm, okLabel) {
             document.getElementById('modalConfirmMessage').textContent = message;
+            document.getElementById('btnConfirmOk').textContent = okLabel || t('deleteBtn');
             pendingConfirmAction = onConfirm;
             document.getElementById('modalConfirm').classList.remove('hidden');
         }
@@ -3486,7 +3492,7 @@
                 updateDroneStockLinkUi(drone);
                 renderAll();
                 showToast(t('toastStockUnlinked'), 'success');
-            });
+            }, t('stockUnlinkBtn'));
         }
 
         function openStockPicker(fromFlight) {

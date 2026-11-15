@@ -148,6 +148,7 @@ test.describe('edit dialog and unlink', () => {
     expect((await store(page, 'drones'))[0].stockId).toBe('s-a');
 
     await page.locator('#btnUnlinkStock').click();
+    await expect(page.locator('#btnConfirmOk')).toHaveText('Unlink');
     await confirmDialog(page, true);
     const d = (await store(page, 'drones'))[0];
     expect(d).not.toHaveProperty('stockId');
