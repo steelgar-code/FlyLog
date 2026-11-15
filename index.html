@@ -649,7 +649,11 @@
 
                 <div id="droneStockLink" class="hidden flex items-center justify-between gap-3 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2">
                     <span id="droneStockLinkText" class="min-w-0 truncate text-slate-300"></span>
-                    <button type="button" id="btnUnlinkStock" class="shrink-0 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="stockUnlinkBtn">Unlink</button>
+                    <span class="shrink-0 flex items-center gap-2">
+                        <a id="stockOpenItem" hidden target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition" data-i18n="stockOpenItemLink" data-i18n-title="stockOpenItemTitle" data-i18n-aria-label="stockOpenItemTitle" title="Open this item in FlyStock (new tab)">Open in FlyStock</a>
+                        <a id="stockRemoveItem" hidden target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-medium transition" data-i18n="stockRemoveItemLink" data-i18n-title="stockRemoveItemTitle" data-i18n-aria-label="stockRemoveItemTitle" title="Remove this item in FlyStock (new tab)">Remove in FlyStock</a>
+                        <button type="button" id="btnUnlinkStock" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="stockUnlinkBtn">Unlink</button>
+                    </span>
                 </div>
 
                 <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
@@ -1205,6 +1209,10 @@
                 stockMissingBadge: "Not found in FlyStock",
                 stockMissingTitle: "This item could not be found in FlyStock on this device",
                 stockLinkedTo: "Linked to FlyStock item: {name}",
+                stockOpenItemLink: "Open in FlyStock",
+                stockOpenItemTitle: "Open this item in FlyStock (opens in a new tab)",
+                stockRemoveItemLink: "Remove in FlyStock",
+                stockRemoveItemTitle: "Remove this item in FlyStock (opens in a new tab)",
                 stockUnlinkBtn: "Unlink",
                 stockUnlinkConfirm: "Unlink \"{name}\" from FlyStock? The airframe keeps its name, hours and flights; the item can be added again later.",
                 toastStockUnlinked: "Airframe unlinked from FlyStock.",
@@ -1468,6 +1476,10 @@
                 stockMissingBadge: "Не знайдено у FlyStock",
                 stockMissingTitle: "Цю позицію не вдалося знайти у FlyStock на цьому пристрої",
                 stockLinkedTo: "Пов’язано з позицією FlyStock: {name}",
+                stockOpenItemLink: "Відкрити у FlyStock",
+                stockOpenItemTitle: "Відкрити цю позицію у FlyStock (у новій вкладці)",
+                stockRemoveItemLink: "Видалити у FlyStock",
+                stockRemoveItemTitle: "Видалити цю позицію у FlyStock (у новій вкладці)",
                 stockUnlinkBtn: "Від’єднати",
                 stockUnlinkConfirm: "Від’єднати «{name}» від FlyStock? Борт збереже назву, наліт і польоти; позицію можна додати знову пізніше.",
                 toastStockUnlinked: "Борт від’єднано від FlyStock.",
@@ -1732,6 +1744,10 @@
                 stockMissingBadge: "Não encontrado no FlyStock",
                 stockMissingTitle: "Este item não foi encontrado no FlyStock neste dispositivo",
                 stockLinkedTo: "Vinculado ao item do FlyStock: {name}",
+                stockOpenItemLink: "Abrir no FlyStock",
+                stockOpenItemTitle: "Abrir este item no FlyStock (abre em nova aba)",
+                stockRemoveItemLink: "Remover no FlyStock",
+                stockRemoveItemTitle: "Remover este item no FlyStock (abre em nova aba)",
                 stockUnlinkBtn: "Desvincular",
                 stockUnlinkConfirm: "Desvincular \"{name}\" do FlyStock? A aeronave mantém nome, horas e voos; o item pode ser adicionado novamente depois.",
                 toastStockUnlinked: "Aeronave desvinculada do FlyStock.",
@@ -2767,7 +2783,13 @@
                 let label = 'stockLinkedBadge', title = 'stockLinkedTitle', icon = 'fa-link text-cyan-400', state_ = 'linked';
                 if (!info) { label = 'stockMissingBadge'; title = 'stockMissingTitle'; icon = 'fa-circle-question text-slate-500'; state_ = 'missing'; }
                 else if (info.removed) { label = 'stockRemovedBadge'; title = 'stockRemovedTitle'; icon = 'fa-triangle-exclamation text-amber-400'; state_ = 'removed'; }
-                return `<span data-stock-badge data-stock-state="${state_}" class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400" title="${escapeHtml(t(title))}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}</span>`;
+                const cls = 'inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400';
+                const url = info ? flyStockItemUrl('edit', drone.stockId) : null;
+                if (url) {
+                    const openTitle = `${t(title)} - ${t('stockOpenItemLink')}`;
+                    return `<a data-stock-badge data-stock-state="${state_}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="${cls} hover:text-cyan-300 hover:bg-slate-700 transition" title="${escapeHtml(openTitle)}" aria-label="${escapeHtml(openTitle)}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}<i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i></a>`;
+                }
+                return `<span data-stock-badge data-stock-state="${state_}" class="${cls}" title="${escapeHtml(t(title))}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}</span>`;
             };
 
             state.drones.forEach((drone, idx) => {
@@ -2814,6 +2836,9 @@
                 const grip = header.querySelector('[data-grip]');
                 grip.addEventListener('mousedown', () => { card.draggable = true; });
                 grip.addEventListener('click', (e) => e.stopPropagation());
+
+                const stockLink = header.querySelector('a[data-stock-badge]');
+                if (stockLink) ['click', 'mousedown', 'keydown'].forEach(ev => stockLink.addEventListener(ev, (e) => e.stopPropagation()));
 
                 const select = header.querySelector('select');
                 select.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -3418,6 +3443,14 @@
         // FlyStock is a sibling app on the same origin. Its data is read-only
         // here (FlyLog never writes that key) and wholly untrusted.
         const STOCK_KEY = 'stockroom_inventory_v1';
+        const FLYSTOCK_URL = 'https://steelgar-code.github.io/FlyStock/';
+        // Deep link into FlyStock (cross-repo contract: #edit=<id> / #remove=<id>).
+        function flyStockItemUrl(action, stockId) {
+            if (action !== 'edit' && action !== 'remove') return null;
+            if (!isSafeId(stockId)) return null;
+            return `${FLYSTOCK_URL}#${action}=${stockId}`;
+        }
+        { const l = document.getElementById('stockPickerLink'); if (l) l.href = FLYSTOCK_URL; }
         const STOCK_FILTER_KEY = 'flylog_stock_type_filter';
         const STOCK_PICKER_SENTINEL = '__flystock_picker__';
         let stockPrevDrone = '';
@@ -3480,6 +3513,16 @@
             const linked = !!(drone && drone.stockId);
             box.classList.toggle('hidden', !linked);
             document.getElementById('droneStockLinkText').textContent = linked ? t('stockLinkedTo', { name: drone.stockName || drone.stockId }) : '';
+            const info = linked ? readFlyStock() : null;
+            const item = info && info.available ? info.byId.get(drone.stockId) : null;
+            const setLink = (id, action, show) => {
+                const a = document.getElementById(id);
+                if (!a) return;
+                const url = show ? flyStockItemUrl(action, drone.stockId) : null;
+                if (url) { a.href = url; a.hidden = false; } else { a.removeAttribute('href'); a.hidden = true; }
+            };
+            setLink('stockOpenItem', 'edit', !!item);
+            setLink('stockRemoveItem', 'remove', !!item && !item.removed);
         }
 
         function unlinkDroneStock() {

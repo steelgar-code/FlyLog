@@ -171,3 +171,109 @@ test.describe('edit dialog and unlink', () => {
     await expect(page.locator('#droneStockLinkText')).toContainText('Vinculado ao item do FlyStock');
   });
 });
+
+const BASE = 'https://steelgar-code.github.io/FlyStock/';
+const openEditDialog = async (page, name) => {
+  const c = await expand(fleetCard(page, name));
+  await c.locator('[data-edit]').click();
+};
+
+test.describe('deep links into FlyStock', () => {
+  test('active item: card link and both dialog links have exact hrefs', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    const b = badge(page, 'Alpha Quad');
+    await expect(b).toHaveAttribute('href', `${BASE}#edit=s-a`);
+    await expect(b).toHaveAttribute('target', '_blank');
+    expect(await b.getAttribute('rel')).toContain('noopener');
+    await openEditDialog(page, 'Alpha Quad');
+    const open = page.locator('#stockOpenItem');
+    const rem = page.locator('#stockRemoveItem');
+    await expect(open).toBeVisible();
+    await expect(rem).toBeVisible();
+    await expect(open).toHaveAttribute('href', `${BASE}#edit=s-a`);
+    await expect(rem).toHaveAttribute('href', `${BASE}#remove=s-a`);
+    for (const l of [open, rem]) {
+      await expect(l).toHaveAttribute('target', '_blank');
+      expect(await l.getAttribute('rel')).toContain('noopener');
+      expect(await l.getAttribute('title')).toBeTruthy();
+    }
+  });
+
+  test('removed item: edit link only', async ({ page }) => {
+    const stock = inv([item('s-a', 'Alpha Quad', { status: 'removed' }), item('s-b', 'Bravo Stock')]);
+    await openFleet(page, { fixture: linkedFixture(), stock });
+    await expect(badge(page, 'Alpha Quad')).toHaveAttribute('href', `${BASE}#edit=s-a`);
+    await openEditDialog(page, 'Alpha Quad');
+    await expect(page.locator('#stockOpenItem')).toBeVisible();
+    await expect(page.locator('#stockRemoveItem')).toBeHidden();
+  });
+
+  for (const [name, stock] of [
+    ['item missing', inv([item('other', 'Other')])],
+    ['key absent', undefined],
+    ['unreadable key', '{nope'],
+  ]) {
+    test(`${name}: no links, badge is not an anchor`, async ({ page }) => {
+      await openFleet(page, { fixture: linkedFixture(), stock });
+      await expect(badge(page, 'Alpha Quad')).toHaveText('Not found in FlyStock');
+      expect(await badge(page, 'Alpha Quad').evaluate((e) => e.tagName)).toBe('SPAN');
+      await openEditDialog(page, 'Alpha Quad');
+      await expect(page.locator('#droneStockLinkText')).toBeVisible();
+      await expect(page.locator('#stockOpenItem')).toBeHidden();
+      await expect(page.locator('#stockRemoveItem')).toBeHidden();
+    });
+  }
+
+  test('unlinked airframe shows no links', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openEditDialog(page, 'Charlie Mini');
+    await expect(page.locator('#stockOpenItem')).toBeHidden();
+    await expect(page.locator('#stockRemoveItem')).toBeHidden();
+  });
+
+  test('after Unlink the links disappear', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openEditDialog(page, 'Alpha Quad');
+    await expect(page.locator('#stockOpenItem')).toBeVisible();
+    await page.locator('#btnUnlinkStock').click();
+    await confirmDialog(page, true);
+    await expect(page.locator('#stockOpenItem')).toBeHidden();
+    await expect(page.locator('#stockRemoveItem')).toBeHidden();
+    await expect(badge(page, 'Alpha Quad')).toHaveCount(0);
+  });
+
+  test('clicking the card link does not toggle the card', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('a[data-stock-badge]')) e.preventDefault(); }));
+    const c = fleetCard(page, 'Alpha Quad');
+    const header = c.locator('[role="button"][aria-expanded]').first();
+    const before = await header.getAttribute('aria-expanded');
+    await badge(page, 'Alpha Quad').click();
+    expect(await header.getAttribute('aria-expanded')).toBe(before);
+    await badge(page, 'Alpha Quad').focus();
+    await page.keyboard.press('Enter');
+    expect(await header.getAttribute('aria-expanded')).toBe(before);
+  });
+
+  test('unsafe stored stockId renders no link and injects nothing', async ({ page }) => {
+    const fx = makeFixture();
+    Object.assign(fx.drones[0], { stockId: 'x"onmouseover=alert(1)', stockName: 'Evil' });
+    await openFleet(page, { fixture: fx, stock: ACTIVE() });
+    const b = badge(page, 'Alpha Quad');
+    await expect(b).toBeVisible();
+    expect(await b.evaluate((e) => e.tagName)).toBe('SPAN');
+    expect(await page.locator('#fleetGrid [onmouseover]').count()).toBe(0);
+    expect(await page.locator('#fleetGrid a[href*="FlyStock"]').count()).toBe(0);
+    await openEditDialog(page, 'Alpha Quad');
+    await expect(page.locator('#stockOpenItem')).toBeHidden();
+    await expect(page.locator('#stockRemoveItem')).toBeHidden();
+  });
+
+  test('labels are translated (uk)', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE(), lang: 'uk' });
+    await openEditDialog(page, 'Alpha Quad');
+    await expect(page.locator('#stockOpenItem')).toHaveText('Відкрити у FlyStock');
+    await expect(page.locator('#stockRemoveItem')).toHaveText('Видалити у FlyStock');
+    expect(await page.locator('#stockOpenItem').getAttribute('title')).toContain('FlyStock');
+  });
+});
