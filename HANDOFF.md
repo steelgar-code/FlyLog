@@ -175,15 +175,15 @@ still purely additive: importing a file into the inventory it came from adds cop
 choice, 15 Nov 2026). Files without ID lines import as before. A restore onto an empty
 inventory keeps the IDs, so FlyLog's links survive a move to a new device.
 
+The export also writes `COMMENT_DATE:` after `COMMENT:` (the item's oldest note), and import
+uses it when valid, so a round trip keeps every note's date. Without it the note is dated with
+`DATE_ADDED`, as before.
+
 On load FlyStock gives an ID to an item that has none and a new one to the later of two items
 sharing an ID; every other stored ID is kept as is. Loading never writes; the repair is saved
 with the next ordinary change.
 
 ### Known gaps
-
-- FlyStock's export writes an item's oldest note as `COMMENT` without its date, and import dates
-  it with the item's added date, so a round trip can change that one note's date. This predates
-  the branch and is not fixed.
 
 - The FlyStock URL is absolute, so the links only reach the published site, not a local copy.
 - iOS installed apps have separate storage: the picker sees FlyStock data only between Safari
@@ -195,7 +195,7 @@ with the next ordinary change.
 
 ### FlyStock tests
 
-`npm install`, then `npm test` in FlyStock (37 tests: smoke, deep links, export/import, stored
+`npm install`, then `npm test` in FlyStock (40 tests: smoke, deep links, export/import, stored
 data). The test server
 uses port 4174 and FlyLog's uses 4173, so both suites can run at the same time; with the same
 port one suite would silently reuse the other app's server.
