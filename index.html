@@ -494,6 +494,9 @@
                         <button id="btnManageStatusesModal" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
                             <i class="fa-solid fa-sliders text-cyan-400"></i> <span data-i18n="editStatusListBtn">Statuses</span>
                         </button>
+                        <button id="btnAddFromStock" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-medium border border-slate-700 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-boxes-stacked text-cyan-400"></i> <span data-i18n="stockAddBtn">Add from FlyStock…</span>
+                        </button>
                         <button id="btnAddDroneModal" class="px-3.5 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-semibold transition flex items-center gap-1.5 shadow-lg shadow-cyan-500/20">
                             <i class="fa-solid fa-plus"></i> <span data-i18n="addDroneBtn">Drone</span>
                         </button>
@@ -649,6 +652,35 @@
                     <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20" data-i18n="saveDroneBtn">Save Drone</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL: ADD AIRFRAMES FROM FLYSTOCK -->
+    <div id="modalStockPicker" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="modalStockPickerTitle">
+        <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-boxes-stacked text-cyan-400"></i>
+                    <h3 id="modalStockPickerTitle" class="font-bold text-white text-base" data-i18n="stockPickerTitle">Add airframes from FlyStock</h3>
+                </div>
+                <button type="button" id="closeStockPicker" class="text-slate-400 hover:text-white p-1" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div id="stockPickerEmpty" class="hidden space-y-3 text-xs text-slate-400">
+                <p id="stockPickerEmptyMsg"></p>
+                <a id="stockPickerLink" href="https://steelgar-code.github.io/FlyStock/" target="_blank" rel="noopener noreferrer" class="inline-block text-cyan-400 hover:text-cyan-300 transition font-medium" data-i18n="stockOpenLink">Open FlyStock</a>
+            </div>
+            <div id="stockPickerBody" class="space-y-3 text-xs">
+                <div class="flex gap-2">
+                    <input type="search" id="stockSearch" class="flex-1 min-w-0 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500" placeholder="Search by description or type" data-i18n-placeholder="stockSearchPlaceholder" aria-label="Search" data-i18n-aria-label="stockSearchLabel" autocomplete="off">
+                    <select id="stockTypeFilter" class="max-w-[40%] px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-slate-200 focus:border-cyan-500" aria-label="Type" data-i18n-aria-label="stockTypeLabel"></select>
+                </div>
+                <div id="stockPickerList" class="space-y-1 max-h-64 overflow-y-auto"></div>
+                <p id="stockPickerNoMatch" class="hidden text-slate-500" data-i18n="stockNoMatches">No items match your search.</p>
+            </div>
+            <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
+                <button type="button" id="btnCancelStockPicker" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition" data-i18n="cancelBtn">Cancel</button>
+                <button type="button" id="btnStockAddSelected" disabled class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xs font-bold transition shadow-lg shadow-cyan-500/20 disabled:opacity-40 disabled:cursor-not-allowed"><span data-i18n="stockAddSelected">Add selected</span> <span id="stockSelectedCount"></span></button>
+            </div>
         </div>
     </div>
 
@@ -1150,6 +1182,21 @@
                 toastFlightTimeOrderInvalid: "Flight End must be after Flight Start — fix the times before saving.",
                 toastDroneUpdated: "Drone updated!",
                 toastDroneAdded: "New drone added!",
+                stockAddBtn: "Add from FlyStock…",
+                stockPickerTitle: "Add airframes from FlyStock",
+                stockSearchPlaceholder: "Search by description or type",
+                stockSearchLabel: "Search",
+                stockTypeLabel: "Type",
+                stockTypeAll: "All types",
+                stockEmptyUnavailable: "No FlyStock inventory was found on this device. Add your airframes in FlyStock first, then come back here.",
+                stockOpenLink: "Open FlyStock",
+                stockEmptyNothing: "Nothing to add: every active FlyStock item is already an airframe here, or there are no active items.",
+                stockNoMatches: "No items match your search.",
+                stockAddSelected: "Add selected",
+                stockLinkedBadge: "FlyStock",
+                stockLinkedTitle: "Linked to a FlyStock item",
+                toastStockAdded_one: "{n} airframe added from FlyStock.",
+                toastStockAdded_other: "{n} airframes added from FlyStock.",
                 toastBatteryUpdated: "Battery updated!",
                 toastBatteryAdded: "New battery pack added!",
                 toastStatusAdded: "Status \"{status}\" added",
@@ -1390,6 +1437,23 @@
                 toastFlightTimeOrderInvalid: "Час завершення польоту має бути пізніше за час початку — виправте час перед збереженням.",
                 toastDroneUpdated: "Дрон оновлено!",
                 toastDroneAdded: "Новий дрон додано!",
+                stockAddBtn: "Додати з FlyStock…",
+                stockPickerTitle: "Додати борти з FlyStock",
+                stockSearchPlaceholder: "Пошук за описом або типом",
+                stockSearchLabel: "Пошук",
+                stockTypeLabel: "Тип",
+                stockTypeAll: "Усі типи",
+                stockEmptyUnavailable: "На цьому пристрої не знайдено інвентар FlyStock. Спочатку додайте свої борти у FlyStock, а потім поверніться сюди.",
+                stockOpenLink: "Відкрити FlyStock",
+                stockEmptyNothing: "Нічого додавати: усі активні позиції FlyStock уже є бортами тут, або активних позицій немає.",
+                stockNoMatches: "Жодна позиція не відповідає пошуку.",
+                stockAddSelected: "Додати вибрані",
+                stockLinkedBadge: "FlyStock",
+                stockLinkedTitle: "Пов’язано з позицією FlyStock",
+                toastStockAdded_one: "{n} борт додано з FlyStock.",
+                toastStockAdded_few: "{n} борти додано з FlyStock.",
+                toastStockAdded_many: "{n} бортів додано з FlyStock.",
+                toastStockAdded_other: "{n} бортів додано з FlyStock.",
                 toastBatteryUpdated: "Батарею оновлено!",
                 toastBatteryAdded: "Новий блок батареї додано!",
                 toastStatusAdded: "Статус «{status}» додано",
@@ -1629,6 +1693,21 @@
                 toastFlightTimeOrderInvalid: "O fim do voo deve ser depois do início do voo — corrija os horários antes de salvar.",
                 toastDroneUpdated: "Drone atualizado!",
                 toastDroneAdded: "Novo drone adicionado!",
+                stockAddBtn: "Adicionar do FlyStock…",
+                stockPickerTitle: "Adicionar aeronaves do FlyStock",
+                stockSearchPlaceholder: "Buscar por descrição ou tipo",
+                stockSearchLabel: "Buscar",
+                stockTypeLabel: "Tipo",
+                stockTypeAll: "Todos os tipos",
+                stockEmptyUnavailable: "Nenhum inventário do FlyStock foi encontrado neste dispositivo. Adicione suas aeronaves no FlyStock primeiro e depois volte aqui.",
+                stockOpenLink: "Abrir o FlyStock",
+                stockEmptyNothing: "Nada para adicionar: todos os itens ativos do FlyStock já são aeronaves aqui, ou não há itens ativos.",
+                stockNoMatches: "Nenhum item corresponde à busca.",
+                stockAddSelected: "Adicionar selecionados",
+                stockLinkedBadge: "FlyStock",
+                stockLinkedTitle: "Vinculado a um item do FlyStock",
+                toastStockAdded_one: "{n} aeronave adicionada do FlyStock.",
+                toastStockAdded_other: "{n} aeronaves adicionadas do FlyStock.",
                 toastBatteryUpdated: "Bateria atualizada!",
                 toastBatteryAdded: "Nova bateria adicionada!",
                 toastStatusAdded: "Status \"{status}\" adicionado",
@@ -2076,6 +2155,8 @@
             // Fleet view buttons
             document.getElementById('btnAddDroneModal')?.addEventListener('click', () => openDroneModal());
             document.getElementById('btnInlineAddDrone')?.addEventListener('click', () => openDroneModal());
+            document.getElementById('btnAddFromStock')?.addEventListener('click', () => openStockPicker(false));
+            setupStockPicker();
             document.getElementById('btnManageStatusesModal')?.addEventListener('click', () => openStatusesModal());
 
             // Statuses and Custom Fields are each reachable from two places: the
@@ -2684,6 +2765,7 @@
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-white text-base truncate">${escapeHtml(drone.name)}</h3>
                         <p class="text-xs text-slate-400 font-mono truncate">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
+                        ${drone.stockId ? `<span data-stock-badge class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400" title="${escapeHtml(t('stockLinkedTitle'))}"><i class="fa-solid fa-link text-[8px] text-cyan-400"></i>${escapeHtml(t('stockLinkedBadge'))}</span>` : ''}
                     </div>
                     <select class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none shrink-0" style="${statusColor}">${optionsHTML}</select>
                     <i class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0 transition-transform${isExpanded ? ' rotate-180' : ''}"></i>
@@ -2931,7 +3013,10 @@
                 if (editingFlight && editingFlight.droneId && !state.drones.some(d => d.id === editingFlight.droneId)) {
                     flightDroneSelect.insertAdjacentHTML('beforeend', `<option value="${escapeHtml(editingFlight.droneId)}">${escapeHtml(editingFlight.droneName || editingFlight.droneId)} ${escapeHtml(t('deletedItemMarker'))}</option>`);
                 }
-                if (currVal) flightDroneSelect.value = currVal;
+                // Last entry: opens the FlyStock picker. Never a real airframe id.
+                flightDroneSelect.insertAdjacentHTML('beforeend', `<option value="${STOCK_PICKER_SENTINEL}">${escapeHtml(t('stockAddBtn'))}</option>`);
+                if (currVal && currVal !== STOCK_PICKER_SENTINEL) flightDroneSelect.value = currVal;
+                stockPrevDrone = flightDroneSelect.value;
             }
 
             if (filterDroneSelect) {
@@ -2964,6 +3049,7 @@
                 e.preventDefault();
                 const editId = document.getElementById('flightEditId').value;
                 const droneId = document.getElementById('flightDrone').value;
+                if (droneId === STOCK_PICKER_SENTINEL) return;
                 const batteryId = document.getElementById('flightBattery').value;
                 const startTime = document.getElementById('flightStartTime').value;
                 const endTime = document.getElementById('flightEndTime').value;
@@ -3215,6 +3301,7 @@
                 document.getElementById('flightEditId').value = '';
             }
 
+            stockPrevDrone = document.getElementById('flightDrone').value;
             document.getElementById('modalLogFlight').classList.remove('hidden');
         }
 
@@ -3277,6 +3364,183 @@
 
         function closeDroneModal() {
             document.getElementById('modalDrone').classList.add('hidden');
+        }
+
+        // ---- FlyStock picker -------------------------------------------------
+        // FlyStock is a sibling app on the same origin. Its data is read-only
+        // here (FlyLog never writes that key) and wholly untrusted.
+        const STOCK_KEY = 'stockroom_inventory_v1';
+        const STOCK_FILTER_KEY = 'flylog_stock_type_filter';
+        const STOCK_PICKER_SENTINEL = '__flystock_picker__';
+        let stockPrevDrone = '';
+        const stockPicker = { fromFlight: false, items: [], available: false, selected: new Set(), query: '', type: '' };
+
+        // -> { available: false } when the key is absent or unreadable, else
+        // { available: true, items: [{id, type, description}] } (active, valid only).
+        function readFlyStock() {
+            let data;
+            try {
+                const raw = localStorage.getItem(STOCK_KEY);
+                if (raw === null) return { available: false, items: [] };
+                data = JSON.parse(raw);
+            } catch (err) {
+                return { available: false, items: [] };
+            }
+            if (!data || typeof data !== 'object' || !Array.isArray(data.items)) return { available: false, items: [] };
+            const seen = new Set();
+            const items = [];
+            data.items.forEach(it => {
+                if (!it || typeof it !== 'object') return;
+                if (!isSafeId(it.id) || seen.has(it.id)) return;
+                if (it.status !== 'active') return;
+                if (typeof it.type !== 'string' || typeof it.description !== 'string') return;
+                seen.add(it.id);
+                items.push({ id: it.id, type: it.type.trim().slice(0, 100), description: it.description.trim().slice(0, 200) });
+            });
+            return { available: true, items };
+        }
+
+        function openStockPicker(fromFlight) {
+            const res = readFlyStock();
+            const linked = new Set(state.drones.map(d => d.stockId).filter(Boolean));
+            stockPicker.fromFlight = !!fromFlight;
+            stockPicker.available = res.available;
+            stockPicker.items = res.items.filter(it => !linked.has(it.id));
+            stockPicker.selected = new Set();
+            stockPicker.query = '';
+            document.getElementById('stockSearch').value = '';
+
+            const types = [...new Set(stockPicker.items.map(it => it.type))].sort((a, b) => a.localeCompare(b));
+            let remembered = 'all';
+            try { remembered = localStorage.getItem(STOCK_FILTER_KEY) || 'all'; } catch (err) {}
+            stockPicker.type = remembered !== 'all' && types.includes(remembered) ? remembered : 'all';
+            const sel = document.getElementById('stockTypeFilter');
+            sel.innerHTML = '';
+            const allOpt = document.createElement('option');
+            allOpt.value = 'all';
+            allOpt.textContent = t('stockTypeAll');
+            sel.appendChild(allOpt);
+            types.forEach(ty => {
+                const o = document.createElement('option');
+                o.value = ty;
+                o.textContent = ty || '—';
+                sel.appendChild(o);
+            });
+            sel.value = stockPicker.type;
+
+            const empty = !stockPicker.items.length;
+            document.getElementById('stockPickerEmpty').classList.toggle('hidden', !empty);
+            document.getElementById('stockPickerBody').classList.toggle('hidden', empty);
+            document.getElementById('stockPickerEmptyMsg').textContent = t(res.available ? 'stockEmptyNothing' : 'stockEmptyUnavailable');
+            renderStockPickerList();
+            document.getElementById('modalStockPicker').classList.remove('hidden');
+            (empty ? document.getElementById('stockPickerLink') : document.getElementById('stockSearch')).focus();
+        }
+
+        function closeStockPicker() {
+            document.getElementById('modalStockPicker').classList.add('hidden');
+        }
+
+        function stockPickerVisibleItems() {
+            const q = stockPicker.query.trim().toLowerCase();
+            return stockPicker.items.filter(it =>
+                (stockPicker.type === 'all' || it.type === stockPicker.type) &&
+                (!q || it.description.toLowerCase().includes(q) || it.type.toLowerCase().includes(q)));
+        }
+
+        function renderStockPickerList() {
+            const list = document.getElementById('stockPickerList');
+            list.innerHTML = '';
+            const visible = stockPickerVisibleItems();
+            visible.forEach(it => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-3 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 cursor-pointer hover:border-slate-700';
+                const cb = document.createElement('input');
+                cb.type = 'checkbox';
+                cb.dataset.stockId = it.id;
+                cb.checked = stockPicker.selected.has(it.id);
+                cb.className = 'accent-cyan-500 shrink-0';
+                const text = document.createElement('span');
+                text.className = 'flex-1 min-w-0';
+                const name = document.createElement('span');
+                name.className = 'block text-slate-200 font-medium truncate';
+                name.textContent = it.description || it.type;
+                const type = document.createElement('span');
+                type.className = 'block text-[10px] text-slate-500 font-mono truncate';
+                type.textContent = it.type;
+                text.append(name, type);
+                label.append(cb, text);
+                list.appendChild(label);
+            });
+            document.getElementById('stockPickerNoMatch').classList.toggle('hidden', visible.length > 0 || !stockPicker.items.length);
+            updateStockSelectedUi();
+        }
+
+        function updateStockSelectedUi() {
+            const n = stockPicker.selected.size;
+            document.getElementById('btnStockAddSelected').disabled = n === 0;
+            document.getElementById('stockSelectedCount').textContent = n ? `(${n})` : '';
+        }
+
+        function addSelectedFromStock() {
+            const chosen = stockPicker.items.filter(it => stockPicker.selected.has(it.id));
+            if (!chosen.length) return;
+            const linked = new Set(state.drones.map(d => d.stockId).filter(Boolean));
+            const status = state.droneStatuses[0] || 'Ready';
+            const stamp = Date.now();
+            const added = [];
+            chosen.forEach((it, i) => {
+                if (linked.has(it.id)) return;
+                added.push({
+                    id: `uav-${stamp}-${i}`,
+                    name: it.description || it.type,
+                    model: it.type,
+                    flightHours: 0,
+                    status,
+                    stockId: it.id,
+                    stockName: it.description
+                });
+            });
+            if (!added.length) return;
+            state.drones.push(...added);
+            closeStockPicker();
+            renderAll();
+            if (stockPicker.fromFlight) {
+                const sel = document.getElementById('flightDrone');
+                if (sel) { sel.value = added[0].id; stockPrevDrone = sel.value; }
+            }
+            showToast(tCount('toastStockAdded', added.length), 'success');
+        }
+
+        function setupStockPicker() {
+            document.getElementById('closeStockPicker')?.addEventListener('click', closeStockPicker);
+            document.getElementById('btnCancelStockPicker')?.addEventListener('click', closeStockPicker);
+            document.getElementById('btnStockAddSelected')?.addEventListener('click', addSelectedFromStock);
+            document.getElementById('stockSearch')?.addEventListener('input', (e) => {
+                stockPicker.query = e.target.value;
+                renderStockPickerList();
+            });
+            document.getElementById('stockTypeFilter')?.addEventListener('change', (e) => {
+                stockPicker.type = e.target.value;
+                try { localStorage.setItem(STOCK_FILTER_KEY, stockPicker.type); } catch (err) {}
+                renderStockPickerList();
+            });
+            document.getElementById('stockPickerList')?.addEventListener('change', (e) => {
+                const id = e.target && e.target.dataset ? e.target.dataset.stockId : null;
+                if (!id) return;
+                if (e.target.checked) stockPicker.selected.add(id); else stockPicker.selected.delete(id);
+                updateStockSelectedUi();
+            });
+            // Last entry of the Log Flight airframe list opens the picker; the
+            // sentinel is never kept as the selection.
+            const flightSel = document.getElementById('flightDrone');
+            flightSel?.addEventListener('change', () => {
+                if (flightSel.value !== STOCK_PICKER_SENTINEL) { stockPrevDrone = flightSel.value; return; }
+                const previous = stockPrevDrone;
+                flightSel.value = previous;
+                if (flightSel.value !== previous || !previous) flightSel.selectedIndex = state.drones.length ? 0 : -1;
+                openStockPicker(true);
+            });
         }
 
         function editDrone(id) {

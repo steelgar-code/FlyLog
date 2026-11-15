@@ -98,11 +98,13 @@ const KEYS = {
 // Seed localStorage (once per tab) and open the app. `fixture` keys are the
 // property names of makeFixture(); pass fixture = {} for a truly empty app
 // (empty arrays are stored explicitly so the demo data is NOT seeded).
-async function openApp(page, { fixture = makeFixture(), lang = 'en', path = '/index.html' } = {}) {
+// `stock`: seeds FlyStock's key (object -> JSON, string -> stored raw, undefined -> absent).
+async function openApp(page, { fixture = makeFixture(), lang = 'en', path = '/index.html', stock } = {}) {
   const entries = {};
   for (const [prop, key] of Object.entries(KEYS)) {
     if (fixture[prop] !== undefined) entries[key] = JSON.stringify(fixture[prop]);
   }
+  if (stock !== undefined) entries.stockroom_inventory_v1 = typeof stock === 'string' ? stock : JSON.stringify(stock);
   await page.addInitScript(({ entries, lang }) => {
     try {
       if (sessionStorage.getItem('__fixture_seeded')) return;

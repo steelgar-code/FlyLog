@@ -292,12 +292,12 @@ test.describe('reordering', () => {
     expect((await store(page, 'drones')).map((d) => d.id)).toEqual(order);
 
     await page.locator('#btnNewFlightHeader').click();
-    await expect(page.locator('#flightDrone option')).toHaveText(['Charlie Mini', 'Alpha Quad', 'Bravo Hex', 'Delta Spare']);
+    await expect(page.locator('#flightDrone option')).toHaveText(['Charlie Mini', 'Alpha Quad', 'Bravo Hex', 'Delta Spare', 'Add from FlyStock…']);
     await page.locator('#btnCancelFlight').click();
 
     await page.reload();
     expect(await cardNames(page, 'fleetGrid')).toEqual(['Charlie Mini', 'Alpha Quad', 'Bravo Hex', 'Delta Spare']);
     await page.locator('#btnNewFlightHeader').click();
-    await expect(page.locator('#flightDrone option')).toHaveText(['Charlie Mini', 'Alpha Quad', 'Bravo Hex', 'Delta Spare']);
+    await expect(page.locator('#flightDrone option')).toHaveText(['Charlie Mini', 'Alpha Quad', 'Bravo Hex', 'Delta Spare', 'Add from FlyStock…']);
   });
 });
