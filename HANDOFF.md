@@ -33,7 +33,7 @@ Decisions still needed from the owner are in section 7.
 
 | Path | Role |
 |---|---|
-| `index.html` | All HTML, CSS and JS (about 4,400 lines) |
+| `index.html` | All HTML, CSS and JS (about 4,300 lines) |
 | `sw.js` | Service worker; lists every file the page needs in `SHELL_URLS` and `VENDOR_URLS` |
 | `vendor/` | Third-party libraries, file names carry the version |
 | `tests/` | Playwright specs; `tests/support/app.js` has fixtures and helpers |
