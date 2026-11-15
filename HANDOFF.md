@@ -137,8 +137,8 @@ without asking.
 
 - **Reader** `readFlyStock()`: validates the FlyStock value; returns the active items for the
   picker and a `byId` map of all valid items (with a removed flag) for link upkeep.
-- **Picker** "Add from FlyStock…": a button in the Fleet tab and the last entry of the airframe
-  list in Log Flight (a sentinel value that is never stored as a `droneId`; with an empty fleet a
+- **Picker** "Add from FlyStock…": an action inside the New Airframe popup (the owner did not
+  want a separate button in the Fleet tab) and the last entry of the airframe list in Log Flight (a sentinel value that is never stored as a `droneId`; with an empty fleet a
   blank placeholder is selected first). Lists active items not linked yet, with search, a
   remembered type filter and multi-select. Name comes from the description, model from the type.
 - **Link upkeep** `syncStockLinks()`: runs at startup, when the Fleet tab opens and on a
@@ -146,6 +146,10 @@ without asking.
   too when it still equalled the old `stockName`. A removed item shows "Removed in FlyStock", a
   missing item or unreadable FlyStock data shows "Not found in FlyStock"; both badges are
   computed at render time and never stored.
+- **Link an existing airframe:** "Link to FlyStock item…" in the edit dialog of an unlinked
+  airframe opens the picker in single-choice mode, stacked above the dialog. Linking sets only
+  `stockId` and `stockName`, applies at once, and re-checks that the item is still active and
+  unlinked.
 - **Unlink** in the airframe edit dialog. The item is then offered by the picker again.
 - **Deep links** `flyStockItemUrl(action, stockId)`: "Open in FlyStock" and "Remove in FlyStock"
   in the edit dialog, and the FlyStock badge on the fleet card is the open link. Active item:
