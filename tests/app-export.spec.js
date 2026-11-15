@@ -30,6 +30,16 @@ async function download(page, buttonId) {
 }
 
 test.describe('JSON backup', () => {
+  test('carries the FlyStock link fields on drones', async ({ page }) => {
+    const fx = makeFixture(now);
+    Object.assign(fx.drones[0], { stockId: 's-a', stockName: 'Alpha Stock' });
+    await openApp(page, { fixture: fx });
+    const backup = JSON.parse(await downloadText(await download(page, '#btnExportBackup')));
+    expect(backup.drones[0]).toMatchObject({ stockId: 's-a', stockName: 'Alpha Stock' });
+    expect(backup.drones[1]).not.toHaveProperty('stockId');
+    backup.flights.forEach((f) => expect(Object.keys(f).sort()).toEqual(Object.keys(fx.flights[0]).sort()));
+  });
+
   test('has the expected structure and the stored data', async ({ page }) => {
     const fx = makeFixture(now);
     fx.customFields = [{ id: 'cf-pts', label: 'Points', type: 'number' }, { id: 'cf-pilot', label: 'Pilot', type: 'text' }];

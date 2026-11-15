@@ -647,6 +647,11 @@
                     </div>
                 </div>
 
+                <div id="droneStockLink" class="hidden flex items-center justify-between gap-3 rounded-xl bg-slate-950 border border-slate-800 px-3 py-2">
+                    <span id="droneStockLinkText" class="min-w-0 truncate text-slate-300"></span>
+                    <button type="button" id="btnUnlinkStock" class="shrink-0 px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="stockUnlinkBtn">Unlink</button>
+                </div>
+
                 <div class="pt-2 flex justify-end gap-2 border-t border-slate-800">
                     <button type="button" id="btnCancelDrone" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="cancelBtn">Cancel</button>
                     <button type="submit" class="px-4 py-2 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold transition shadow-lg shadow-cyan-500/20" data-i18n="saveDroneBtn">Save Drone</button>
@@ -1195,6 +1200,14 @@
                 stockAddSelected: "Add selected",
                 stockLinkedBadge: "FlyStock",
                 stockLinkedTitle: "Linked to a FlyStock item",
+                stockRemovedBadge: "Removed in FlyStock",
+                stockRemovedTitle: "This item is marked as removed in FlyStock",
+                stockMissingBadge: "Not found in FlyStock",
+                stockMissingTitle: "This item could not be found in FlyStock on this device",
+                stockLinkedTo: "Linked to FlyStock item: {name}",
+                stockUnlinkBtn: "Unlink",
+                stockUnlinkConfirm: "Unlink \"{name}\" from FlyStock? The airframe keeps its name, hours and flights; the item can be added again later.",
+                toastStockUnlinked: "Airframe unlinked from FlyStock.",
                 toastStockAdded_one: "{n} airframe added from FlyStock.",
                 toastStockAdded_other: "{n} airframes added from FlyStock.",
                 toastBatteryUpdated: "Battery updated!",
@@ -1450,6 +1463,14 @@
                 stockAddSelected: "Додати вибрані",
                 stockLinkedBadge: "FlyStock",
                 stockLinkedTitle: "Пов’язано з позицією FlyStock",
+                stockRemovedBadge: "Видалено у FlyStock",
+                stockRemovedTitle: "Цю позицію позначено як видалену у FlyStock",
+                stockMissingBadge: "Не знайдено у FlyStock",
+                stockMissingTitle: "Цю позицію не вдалося знайти у FlyStock на цьому пристрої",
+                stockLinkedTo: "Пов’язано з позицією FlyStock: {name}",
+                stockUnlinkBtn: "Від’єднати",
+                stockUnlinkConfirm: "Від’єднати «{name}» від FlyStock? Борт збереже назву, наліт і польоти; позицію можна додати знову пізніше.",
+                toastStockUnlinked: "Борт від’єднано від FlyStock.",
                 toastStockAdded_one: "{n} борт додано з FlyStock.",
                 toastStockAdded_few: "{n} борти додано з FlyStock.",
                 toastStockAdded_many: "{n} бортів додано з FlyStock.",
@@ -1706,6 +1727,14 @@
                 stockAddSelected: "Adicionar selecionados",
                 stockLinkedBadge: "FlyStock",
                 stockLinkedTitle: "Vinculado a um item do FlyStock",
+                stockRemovedBadge: "Removido no FlyStock",
+                stockRemovedTitle: "Este item está marcado como removido no FlyStock",
+                stockMissingBadge: "Não encontrado no FlyStock",
+                stockMissingTitle: "Este item não foi encontrado no FlyStock neste dispositivo",
+                stockLinkedTo: "Vinculado ao item do FlyStock: {name}",
+                stockUnlinkBtn: "Desvincular",
+                stockUnlinkConfirm: "Desvincular \"{name}\" do FlyStock? A aeronave mantém nome, horas e voos; o item pode ser adicionado novamente depois.",
+                toastStockUnlinked: "Aeronave desvinculada do FlyStock.",
                 toastStockAdded_one: "{n} aeronave adicionada do FlyStock.",
                 toastStockAdded_other: "{n} aeronaves adicionadas do FlyStock.",
                 toastBatteryUpdated: "Bateria atualizada!",
@@ -1907,6 +1936,7 @@
             setupFormHandlers();
             setupOfflineIndicator();
             renderAll();
+            syncStockLinks();
         });
 
         // ================= Offline support (service worker) =================
@@ -2227,6 +2257,7 @@
 
         function switchTab(tabName) {
             state.activeTab = tabName;
+            if (tabName === 'fleet') syncStockLinks();
             
             // Hide all view panels
             document.querySelectorAll('.view-panel').forEach(panel => panel.classList.add('hidden'));
@@ -2729,6 +2760,15 @@
             fleetGrid.innerHTML = '';
 
             const numericFields = state.customFields.filter(f => f.type === 'number');
+            const stockInfo = state.drones.some(d => d.stockId) ? readFlyStock() : null;
+            const stockBadge = (drone) => {
+                if (!drone.stockId) return '';
+                const info = stockInfo.available ? stockInfo.byId.get(drone.stockId) : null;
+                let label = 'stockLinkedBadge', title = 'stockLinkedTitle', icon = 'fa-link text-cyan-400', state_ = 'linked';
+                if (!info) { label = 'stockMissingBadge'; title = 'stockMissingTitle'; icon = 'fa-circle-question text-slate-500'; state_ = 'missing'; }
+                else if (info.removed) { label = 'stockRemovedBadge'; title = 'stockRemovedTitle'; icon = 'fa-triangle-exclamation text-amber-400'; state_ = 'removed'; }
+                return `<span data-stock-badge data-stock-state="${state_}" class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400" title="${escapeHtml(t(title))}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}</span>`;
+            };
 
             state.drones.forEach((drone, idx) => {
                 const droneFlights = state.flights.filter(f => f.droneId === drone.id);
@@ -2765,7 +2805,7 @@
                     <div class="flex-1 min-w-0">
                         <h3 class="font-bold text-white text-base truncate">${escapeHtml(drone.name)}</h3>
                         <p class="text-xs text-slate-400 font-mono truncate">${escapeHtml(drone.model) || t('uavPlatformFallback')}</p>
-                        ${drone.stockId ? `<span data-stock-badge class="inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400" title="${escapeHtml(t('stockLinkedTitle'))}"><i class="fa-solid fa-link text-[8px] text-cyan-400"></i>${escapeHtml(t('stockLinkedBadge'))}</span>` : ''}
+                        ${stockBadge(drone)}
                     </div>
                     <select class="text-xs px-2.5 py-1 rounded-lg font-semibold border focus:outline-none shrink-0" style="${statusColor}">${optionsHTML}</select>
                     <i class="fa-solid fa-chevron-down text-slate-500 text-xs shrink-0 transition-transform${isExpanded ? ' rotate-180' : ''}"></i>
@@ -3355,7 +3395,9 @@
                 document.getElementById('droneModel').value = drone.model || '';
                 document.getElementById('droneHours').value = drone.flightHours || 0;
                 document.getElementById('droneStatus').value = drone.status || 'Ready';
+                updateDroneStockLinkUi(drone);
             } else {
+                updateDroneStockLinkUi(null);
                 document.getElementById('modalDroneTitle').textContent = t('addNewDroneTitle');
                 document.getElementById('droneEditId').value = '';
             }
@@ -3381,23 +3423,70 @@
             let data;
             try {
                 const raw = localStorage.getItem(STOCK_KEY);
-                if (raw === null) return { available: false, items: [] };
+                if (raw === null) return { available: false, items: [], byId: new Map() };
                 data = JSON.parse(raw);
             } catch (err) {
-                return { available: false, items: [] };
+                return { available: false, items: [], byId: new Map() };
             }
-            if (!data || typeof data !== 'object' || !Array.isArray(data.items)) return { available: false, items: [] };
+            if (!data || typeof data !== 'object' || !Array.isArray(data.items)) return { available: false, items: [], byId: new Map() };
             const seen = new Set();
             const items = [];
+            const byId = new Map(); // every valid item, active or removed
             data.items.forEach(it => {
                 if (!it || typeof it !== 'object') return;
                 if (!isSafeId(it.id) || seen.has(it.id)) return;
-                if (it.status !== 'active') return;
+                if (it.status !== 'active' && it.status !== 'removed') return;
                 if (typeof it.type !== 'string' || typeof it.description !== 'string') return;
                 seen.add(it.id);
-                items.push({ id: it.id, type: it.type.trim().slice(0, 100), description: it.description.trim().slice(0, 200) });
+                const rec = { id: it.id, type: it.type.trim().slice(0, 100), description: it.description.trim().slice(0, 200) };
+                byId.set(it.id, { description: rec.description, removed: it.status === 'removed' });
+                if (it.status === 'active') items.push(rec);
             });
-            return { available: true, items };
+            return { available: true, items, byId };
+        }
+
+        // Keep linked airframes in step with FlyStock: a renamed item updates
+        // stockName (and name, unless the pilot renamed the airframe). Removed /
+        // missing items are only displayed (see renderFleetGrid), never stored.
+        function syncStockLinks() {
+            if (!state.drones.some(d => d.stockId)) return;
+            const res = readFlyStock();
+            if (!res.available) return;
+            let changed = false;
+            state.drones.forEach(d => {
+                if (!d.stockId) return;
+                const info = res.byId.get(d.stockId);
+                if (!info || info.removed || !info.description || info.description === d.stockName) return;
+                const oldStockName = d.stockName;
+                d.stockName = info.description;
+                if (d.name === oldStockName) {
+                    d.name = info.description;
+                    state.flights.forEach(f => { if (f.droneId === d.id) f.droneName = d.name; });
+                }
+                changed = true;
+            });
+            if (changed) renderAll();
+        }
+
+        function updateDroneStockLinkUi(drone) {
+            const box = document.getElementById('droneStockLink');
+            if (!box) return;
+            const linked = !!(drone && drone.stockId);
+            box.classList.toggle('hidden', !linked);
+            document.getElementById('droneStockLinkText').textContent = linked ? t('stockLinkedTo', { name: drone.stockName || drone.stockId }) : '';
+        }
+
+        function unlinkDroneStock() {
+            const id = document.getElementById('droneEditId').value;
+            const drone = state.drones.find(d => d.id === id);
+            if (!drone || !drone.stockId) return;
+            showConfirm(t('stockUnlinkConfirm', { name: drone.stockName || drone.stockId }), () => {
+                delete drone.stockId;
+                delete drone.stockName;
+                updateDroneStockLinkUi(drone);
+                renderAll();
+                showToast(t('toastStockUnlinked'), 'success');
+            });
         }
 
         function openStockPicker(fromFlight) {
@@ -3513,6 +3602,8 @@
         }
 
         function setupStockPicker() {
+            document.getElementById('btnUnlinkStock')?.addEventListener('click', unlinkDroneStock);
+            window.addEventListener('storage', (e) => { if (e.key === STOCK_KEY || e.key === null) syncStockLinks(); renderFleetGrid(); });
             document.getElementById('closeStockPicker')?.addEventListener('click', closeStockPicker);
             document.getElementById('btnCancelStockPicker')?.addEventListener('click', closeStockPicker);
             document.getElementById('btnStockAddSelected')?.addEventListener('click', addSelectedFromStock);
@@ -4253,13 +4344,21 @@
                 return { list: out, byOldId, ids: usedIds };
             };
 
+            const seenStockIds = new Set();
             const drones = parseAsset(data.drones, 'uav', d => {
                 const model = importText(d.model);
                 const flightHours = importNumber(d.flightHours);
                 const status = importText(d.status);
                 if (model === undefined || flightHours === undefined || status === undefined) return null;
                 // Statuses a drone uses are always added to the list (status: null = use the list's first).
-                return { model, flightHours, status: status.trim() ? addStatus(status) : null };
+                const rec = { model, flightHours, status: status.trim() ? addStatus(status) : null };
+                // FlyStock link: safe id only, one airframe per item (first wins).
+                if (isSafeId(d.stockId) && !seenStockIds.has(d.stockId)) {
+                    seenStockIds.add(d.stockId);
+                    rec.stockId = d.stockId;
+                    rec.stockName = typeof d.stockName === 'string' ? d.stockName.trim().slice(0, 200) : '';
+                }
+                return rec;
             });
             const batteries = parseAsset(data.batteries, 'bat', b => {
                 const cycles = importNumber(b.cycles);
@@ -4358,6 +4457,11 @@
             };
         }
 
+        function withStockLink(rec, src) {
+            if (src.stockId) { rec.stockId = src.stockId; rec.stockName = src.stockName || ''; }
+            return rec;
+        }
+
         // Replace: the result is exactly the backup's data.
         function planReplaceImport(p) {
             let statuses = p.statuses.slice();
@@ -4370,7 +4474,7 @@
                 droneStatuses: statuses,
                 droneStatusColors: Object.assign({}, p.colors),
                 customFields: p.fields.map(f => ({ id: f.id, label: f.label, type: f.type })),
-                drones: p.drones.map(d => ({ id: d.id, name: d.name, model: d.model, flightHours: d.flightHours, status: d.status || statuses[0] })),
+                drones: p.drones.map(d => withStockLink({ id: d.id, name: d.name, model: d.model, flightHours: d.flightHours, status: d.status || statuses[0] }, d)),
                 batteries: p.batteries.map(b => ({ id: b.id, name: b.name, cycles: b.cycles, flightHours: b.flightHours, status: b.status })),
                 // A flight whose airframe/battery is not in the backup (deleted
                 // before the export) keeps its original id reference, as it had.
@@ -4431,11 +4535,24 @@
                 const ids = new Set(list.map(x => x.id));
                 const target = new Map();
                 incoming.forEach(item => {
-                    const match = list.find(x => importNameKey(x.name) === importNameKey(item.name));
-                    if (match) { target.set(item, match); skipped++; return; }
+                    let match = (item.stockId && list.find(x => x.stockId === item.stockId))
+                        || list.find(x => importNameKey(x.name) === importNameKey(item.name));
+                    if (match) {
+                        if (item.stockId && !match.stockId && !list.some(x => x.stockId === item.stockId)) {
+                            // Copy: the live state must stay untouched until commit.
+                            const adopted = Object.assign({}, match, { stockId: item.stockId, stockName: item.stockName || '' });
+                            list[list.indexOf(match)] = adopted;
+                            match = adopted;
+                        }
+                        target.set(item, match); skipped++; return;
+                    }
                     const id = ids.has(item.id) ? newImportId(prefix) : item.id;
                     ids.add(id);
                     const rec = build(item, id);
+                    if (item.stockId && !list.some(x => x.stockId === item.stockId)) {
+                        rec.stockId = item.stockId;
+                        rec.stockName = item.stockName || '';
+                    }
                     list.push(rec);
                     target.set(item, rec);
                     added++;

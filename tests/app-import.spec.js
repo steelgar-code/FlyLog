@@ -520,3 +520,99 @@ test.describe('hostile ids in a backup', () => {
     expect(await data(page)).toEqual(fx);
   });
 });
+
+// ---- FlyStock links (stockId / stockName on airframes) ----
+const mkDrone = (id, name, extra = {}) => ({ id, name, model: '', flightHours: 0, status: 'Ready', ...extra });
+const linkBackup = (drones, flights = []) => ({
+  app: 'FlyLog Pro', backupVersion: 1, drones, batteries: [], flights,
+  droneStatuses: ['Ready'], droneStatusColors: {}, customFields: [],
+});
+const emptyFx = (drones) => ({ drones, batteries: [], flights: [], droneStatuses: ['Ready'], droneStatusColors: {}, customFields: [] });
+const stockIdsOf = (drones) => drones.map((x) => x.stockId).filter(Boolean);
+
+test.describe('FlyStock links in backups', () => {
+  for (const mode of ['replace', 'merge']) {
+    test(`${mode}: invalid stockId is dropped with its stockName; valid ones are kept; duplicates keep the first`, async ({ page }) => {
+      await openApp(page, { fixture: emptyFx([]) });
+      const long = 'x'.repeat(65);
+      await importAs(page, linkBackup([
+        mkDrone('d1', 'Quote', { stockId: 'a"onclick=x', stockName: 'N1' }),
+        mkDrone('d2', 'Long', { stockId: long, stockName: 'N2' }),
+        mkDrone('d3', 'Num', { stockId: 5, stockName: 'N3' }),
+        mkDrone('d4', 'Good', { stockId: 's-good', stockName: `  ${'y'.repeat(300)}  ` }),
+        mkDrone('d5', 'Dup', { stockId: 's-good', stockName: 'Other' }),
+        mkDrone('d6', 'NoName', { stockId: 's-two', stockName: 42 }),
+      ]), mode);
+      const drones = (await data(page)).drones;
+      const by = (n) => drones.find((x) => x.name === n);
+      for (const n of ['Quote', 'Long', 'Num', 'Dup']) {
+        expect(by(n)).not.toHaveProperty('stockId');
+        expect(by(n)).not.toHaveProperty('stockName');
+      }
+      expect(by('Good').stockId).toBe('s-good');
+      expect(by('Good').stockName).toBe('y'.repeat(200));
+      expect(by('NoName')).toMatchObject({ stockId: 's-two', stockName: '' });
+    });
+  }
+
+  test('replace carries the fields through', async ({ page }) => {
+    await openApp(page, { fixture: makeFixture(now) });
+    await importAs(page, linkBackup([mkDrone('uav-x', 'Linked', { stockId: 's-1', stockName: 'Linked Stock' })]), 'replace');
+    expect((await data(page)).drones).toEqual([mkDrone('uav-x', 'Linked', { stockId: 's-1', stockName: 'Linked Stock' })]);
+  });
+
+  test('merge: stockId match wins over names (no duplicate), flights follow it', async ({ page }) => {
+    const local = emptyFx([mkDrone('uav-local', 'Local Name', { stockId: 's-1', stockName: 'Local Name' })]);
+    await openApp(page, { fixture: local });
+    await importAs(page, linkBackup(
+      [mkDrone('remote', 'Different Name', { flightHours: 50, stockId: 's-1', stockName: 'Different Name' })],
+      [{ id: 'rf1', droneId: 'remote', droneName: 'Different Name', startTime: '2026-01-05T10:00', endTime: '2026-01-05T10:20', duration: 20, notes: 'Linked flight', customValues: {} }],
+    ), 'merge');
+    const d = await data(page);
+    expect(d.drones).toEqual(local.drones);
+    expect(d.flights).toHaveLength(1);
+    expect(d.flights[0]).toMatchObject({ droneId: 'uav-local', droneName: 'Local Name' });
+  });
+
+  test('merge: name match, an existing link wins', async ({ page }) => {
+    const local = emptyFx([mkDrone('uav-local', 'Same', { stockId: 's-local', stockName: 'Same' })]);
+    await openApp(page, { fixture: local });
+    await importAs(page, linkBackup([mkDrone('r', 'same', { stockId: 's-remote', stockName: 'R' })]), 'merge');
+    const d = (await data(page)).drones;
+    expect(d).toEqual(local.drones);
+  });
+
+  test('merge: name match adopts the imported link when free; not when another airframe holds it', async ({ page }) => {
+    const local = emptyFx([
+      mkDrone('uav-a', 'Adopter'),
+      mkDrone('uav-b', 'Blocked'),
+      mkDrone('uav-h', 'Holder', { stockId: 's-held', stockName: 'Holder' }),
+    ]);
+    await openApp(page, { fixture: local });
+    await importAs(page, linkBackup([
+      mkDrone('r1', 'adopter', { stockId: 's-new', stockName: 'Adopter Stock' }),
+      mkDrone('r2', 'blocked', { stockId: 's-held', stockName: 'Whatever' }),
+    ]), 'merge');
+    const d = (await data(page)).drones;
+    expect(d).toHaveLength(3);
+    expect(d[0]).toMatchObject({ id: 'uav-a', stockId: 's-new', stockName: 'Adopter Stock' });
+    expect(d[1]).not.toHaveProperty('stockId');
+    expect(d[2].stockId).toBe('s-held');
+  });
+
+  test('merge: unmatched airframe is added with its link; a taken stockId never creates a duplicate airframe or link', async ({ page }) => {
+    const local = emptyFx([mkDrone('uav-h', 'Holder', { stockId: 's-held', stockName: 'Holder' })]);
+    await openApp(page, { fixture: local });
+    await importAs(page, linkBackup([
+      mkDrone('r1', 'Fresh', { stockId: 's-fresh', stockName: 'Fresh' }),
+      mkDrone('r2', 'Taken', { stockId: 's-held', stockName: 'Taken' }),
+    ]), 'merge');
+    // r2 matches the holder by stockId, so it is the holder, not a new airframe.
+    const d = (await data(page)).drones;
+    expect(d.map((x) => x.name)).toEqual(['Holder', 'Fresh']);
+    expect(d[1]).toMatchObject({ stockId: 's-fresh', stockName: 'Fresh' });
+
+    const ids = stockIdsOf(d);
+    expect(new Set(ids).size).toBe(ids.length);
+  });
+});
