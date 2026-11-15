@@ -103,8 +103,8 @@ From a read-only analysis of FlyStock `index.html` at `cbd12f9`.
 - **Load and save:** data is read once at startup and the whole dataset is rewritten on every
   change. There is no `storage`, focus or visibility listener. A write made by another app while
   FlyStock is open is lost on FlyStock's next save.
-- **Import/export:** a plain-text format without item IDs; import is additive and assigns new
-  IDs. A raw-storage JSON download also exists.
+- **Import/export (at `cbd12f9`):** a plain-text format without item IDs; import is additive and
+  assigns new IDs. A raw-storage JSON download also exists. The branch adds IDs, see section 4.
 - **Cross-app hooks (at `cbd12f9`):** none, apart from footer links to the sibling apps. The
   branch adds the deep links of section 4.
 - **Tests (at `cbd12f9`):** none. The branch adds a Playwright suite set up like FlyLog's.
@@ -166,12 +166,25 @@ ID matching `SAFE_ID_RE`, opens its existing Edit or Remove panel (`#remove` on 
 removed item opens Edit), shows a notice when the item does not exist, and then clears the hash.
 Both repositories test this format; change it in both or not at all.
 
+### FlyStock export and import of item IDs
+
+Each item block in FlyStock's text export starts with an `ID:` line (only for IDs matching
+`SAFE_ID_RE`). Import keeps the ID when it is valid and not used by an item already in the
+inventory or by an earlier block of the file; otherwise the item gets a fresh ID. Import is
+still purely additive: importing a file into the inventory it came from adds copies (owner's
+choice, 15 Nov 2026). Files without ID lines import as before. A restore onto an empty
+inventory keeps the IDs, so FlyLog's links survive a move to a new device.
+
+On load FlyStock gives an ID to an item that has none and a new one to the later of two items
+sharing an ID; every other stored ID is kept as is. Loading never writes; the repair is saved
+with the next ordinary change.
+
 ### Known gaps
 
-- FlyStock's text export has no item IDs and its import assigns new ones, so a FlyStock export
-  and re-import (for example onto a new device) breaks every link; the airframes then show
-  "Not found in FlyStock". Fix: add the ID to the text format and keep it on import when valid
-  and unused. Not done; see decision 2.
+- FlyStock's export writes an item's oldest note as `COMMENT` without its date, and import dates
+  it with the item's added date, so a round trip can change that one note's date. This predates
+  the branch and is not fixed.
+
 - The FlyStock URL is absolute, so the links only reach the published site, not a local copy.
 - iOS installed apps have separate storage: the picker sees FlyStock data only between Safari
   tabs there. The owner does not need this now.
@@ -182,7 +195,8 @@ Both repositories test this format; change it in both or not at all.
 
 ### FlyStock tests
 
-`npm install`, then `npm test` in FlyStock (27 tests: smoke and deep links). The test server
+`npm install`, then `npm test` in FlyStock (37 tests: smoke, deep links, export/import, stored
+data). The test server
 uses port 4174 and FlyLog's uses 4173, so both suites can run at the same time; with the same
 port one suite would silently reuse the other app's server.
 
@@ -270,7 +284,7 @@ Each phase is a small batch with its own tests.
 |---|---|---|---|
 | 1 | FlyLog | FlyStock reader, picker, link upkeep, unlink, backup support | Done on the branch |
 | 2 | Both | Deep links from FlyLog into FlyStock's edit and remove forms; FlyStock test suite | Done on the branch |
-| 3 | FlyStock | Item IDs in text export and import | Open, decision 2 |
+| 3 | FlyStock | Item IDs in text export and import; safe handling of stored data without IDs | Done on the branch |
 | 4 | Both | Storage layer refactor, no behaviour change | Open |
 | 5 | Both | IndexedDB-aware readers, then migrate FlyLog, then FlyStock, then drop legacy keys | Open |
 | 6 | FlySky, FlyLog | Analyse FlySky; publish last known weather and bring back FlyLog's header box | Open |
@@ -279,8 +293,7 @@ Each phase is a small batch with its own tests.
 
 1. **Merging.** The branch `ccr-dca4a52c-yl3ehm` in FlyLog and FlyStock is not merged. Publish
    FlyStock first or together with FlyLog, otherwise the new links open FlyStock without a form.
-2. **FlyStock item IDs in export/import** (phase 3). Recommended: yes, it protects the links.
-3. **Timing of the IndexedDB migration.** Recommended: only when size or attachments require it.
+2. **Timing of the IndexedDB migration.** Recommended: only when size or attachments require it.
 
 Decided on 15 Nov 2026: no after-flight block and no messages (section 4); the feature does not
 have to work between installed apps on iOS; backup Merge matches by FlyStock link first.
