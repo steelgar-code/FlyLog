@@ -671,6 +671,28 @@
         </div>
     </div>
 
+    <!-- MODAL: FLYSTOCK ACTIONS FOR A LINKED AIRFRAME -->
+    <div id="modalStockActions" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="modalStockActionsTitle">
+        <div class="w-full max-w-sm bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-start gap-2 border-b border-slate-800 pb-3">
+                <div class="flex items-start gap-2 min-w-0">
+                    <i class="fa-solid fa-link text-cyan-400 mt-1"></i>
+                    <h3 id="modalStockActionsTitle" class="font-bold text-white text-base break-words min-w-0"></h3>
+                </div>
+                <button type="button" id="closeStockActions" class="text-slate-400 hover:text-white p-1 shrink-0" aria-label="Close" data-i18n-aria-label="closeAriaLabel"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <p id="stockActionsText" class="text-xs text-slate-400 break-words"></p>
+            <div class="flex flex-wrap gap-2 text-xs">
+                <a id="stockActionsOpen" hidden target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-400 font-medium transition" data-i18n="stockOpenItemLink" data-i18n-title="stockOpenItemTitle" title="Open this item in FlyStock (opens in a new tab)">Open in FlyStock</a>
+                <a id="stockActionsRemove" hidden target="_blank" rel="noopener noreferrer" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-amber-400 font-medium transition" data-i18n="stockRemoveItemLink" data-i18n-title="stockRemoveItemTitle" title="Remove this item in FlyStock (opens in a new tab)">Remove in FlyStock</a>
+                <button type="button" id="stockActionsUnlink" class="px-3 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition" data-i18n="stockUnlinkBtn">Unlink</button>
+            </div>
+            <div class="pt-2 flex justify-end border-t border-slate-800">
+                <button type="button" id="btnCancelStockActions" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium transition" data-i18n="cancelBtn">Cancel</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL: ADD AIRFRAMES FROM FLYSTOCK -->
     <div id="modalStockPicker" data-modal class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[55] flex items-center justify-center p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="modalStockPickerTitle">
         <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
@@ -1210,6 +1232,7 @@
                 stockNoMatches: "No items match your search.",
                 stockAddSelected: "Add selected",
                 stockLinkedBadge: "FlyStock",
+                stockActionsLabel: "FlyStock actions",
                 stockLinkedTitle: "Linked to a FlyStock item",
                 stockRemovedBadge: "Removed in FlyStock",
                 stockRemovedTitle: "This item is marked as removed in FlyStock",
@@ -1485,6 +1508,7 @@
                 stockNoMatches: "Жодна позиція не відповідає пошуку.",
                 stockAddSelected: "Додати вибрані",
                 stockLinkedBadge: "FlyStock",
+                stockActionsLabel: "Дії FlyStock",
                 stockLinkedTitle: "Пов’язано з позицією FlyStock",
                 stockRemovedBadge: "Видалено у FlyStock",
                 stockRemovedTitle: "Цю позицію позначено як видалену у FlyStock",
@@ -1761,6 +1785,7 @@
                 stockNoMatches: "Nenhum item corresponde à busca.",
                 stockAddSelected: "Adicionar selecionados",
                 stockLinkedBadge: "FlyStock",
+                stockActionsLabel: "Ações do FlyStock",
                 stockLinkedTitle: "Vinculado a um item do FlyStock",
                 stockRemovedBadge: "Removido no FlyStock",
                 stockRemovedTitle: "Este item está marcado como removido no FlyStock",
@@ -2814,12 +2839,8 @@
                 if (!info) { label = 'stockMissingBadge'; title = 'stockMissingTitle'; icon = 'fa-circle-question text-slate-500'; state_ = 'missing'; }
                 else if (info.removed) { label = 'stockRemovedBadge'; title = 'stockRemovedTitle'; icon = 'fa-triangle-exclamation text-amber-400'; state_ = 'removed'; }
                 const cls = 'inline-flex items-center gap-1 mt-0.5 px-1.5 py-px rounded bg-slate-800 text-[10px] text-slate-400';
-                const url = info ? flyStockItemUrl('edit', drone.stockId) : null;
-                if (url) {
-                    const openTitle = `${t(title)} - ${t('stockOpenItemLink')}`;
-                    return `<a data-stock-badge data-stock-state="${state_}" href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" class="${cls} hover:text-cyan-300 hover:bg-slate-700 transition" title="${escapeHtml(openTitle)}" aria-label="${escapeHtml(openTitle)}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}<i class="fa-solid fa-arrow-up-right-from-square text-[8px]"></i></a>`;
-                }
-                return `<span data-stock-badge data-stock-state="${state_}" class="${cls}" title="${escapeHtml(t(title))}"><i class="fa-solid ${icon} text-[8px]"></i>${escapeHtml(t(label))}</span>`;
+                const tip = `${t(title)} - ${t('stockActionsLabel')}`;
+                return `<button type="button" data-stock-badge data-stock-state="${state_}" data-drone-id="${escapeHtml(drone.id)}" class="${cls} hover:text-cyan-300 hover:bg-slate-700 transition max-w-full" title="${escapeHtml(tip)}" aria-label="${escapeHtml(t('stockActionsLabel'))}: ${escapeHtml(t(label))}" aria-haspopup="dialog"><i class="fa-solid ${icon} text-[8px]"></i><span class="truncate">${escapeHtml(t(label))}</span></button>`;
             };
 
             state.drones.forEach((drone, idx) => {
@@ -2867,8 +2888,13 @@
                 grip.addEventListener('mousedown', () => { card.draggable = true; });
                 grip.addEventListener('click', (e) => e.stopPropagation());
 
-                const stockLink = header.querySelector('a[data-stock-badge]');
-                if (stockLink) ['click', 'mousedown', 'keydown'].forEach(ev => stockLink.addEventListener(ev, (e) => e.stopPropagation()));
+                const stockBtn = header.querySelector('button[data-stock-badge]');
+                if (stockBtn) {
+                    ['click', 'mousedown'].forEach(ev => stockBtn.addEventListener(ev, (e) => e.stopPropagation()));
+                    // Keep Enter/Space from toggling the card; Escape must still reach the document.
+                    stockBtn.addEventListener('keydown', (e) => { if (e.key !== 'Escape') e.stopPropagation(); });
+                    stockBtn.addEventListener('click', () => openStockActions(drone.id));
+                }
 
                 const select = header.querySelector('select');
                 select.addEventListener('mousedown', (e) => e.stopPropagation());
@@ -3564,17 +3590,43 @@
             setLink('stockRemoveItem', 'remove', !!item && !item.removed);
         }
 
-        function unlinkDroneStock() {
-            const id = document.getElementById('droneEditId').value;
-            const drone = state.drones.find(d => d.id === id);
+        function unlinkDroneStock(droneId, onDone) {
+            const drone = state.drones.find(d => d.id === droneId);
             if (!drone || !drone.stockId) return;
             showConfirm(t('stockUnlinkConfirm', { name: drone.stockName || drone.stockId }), () => {
                 delete drone.stockId;
                 delete drone.stockName;
                 updateDroneStockLinkUi(drone);
                 renderAll();
+                if (onDone) onDone();
                 showToast(t('toastStockUnlinked'), 'success');
             }, t('stockUnlinkBtn'));
+        }
+
+        // Popup behind the fleet-card FlyStock badge: same actions as the
+        // linked section of the Edit Airframe form.
+        let stockActionsDroneId = '';
+        function openStockActions(droneId) {
+            const drone = state.drones.find(d => d.id === droneId);
+            if (!drone || !drone.stockId) return;
+            stockActionsDroneId = drone.id;
+            const info = readFlyStock();
+            const item = info.available ? info.byId.get(drone.stockId) : null;
+            document.getElementById('modalStockActionsTitle').textContent = drone.name;
+            const text = !item ? t('stockMissingBadge') : item.removed ? t('stockRemovedBadge') : t('stockLinkedTo', { name: drone.stockName || drone.stockId });
+            document.getElementById('stockActionsText').textContent = text;
+            const setLink = (id, action, show) => {
+                const a = document.getElementById(id);
+                const url = show ? flyStockItemUrl(action, drone.stockId) : null;
+                if (url) { a.href = url; a.hidden = false; } else { a.removeAttribute('href'); a.hidden = true; }
+            };
+            setLink('stockActionsOpen', 'edit', !!item);
+            setLink('stockActionsRemove', 'remove', !!item && !item.removed);
+            document.getElementById('modalStockActions').classList.remove('hidden');
+        }
+        function closeStockActions() {
+            document.getElementById('modalStockActions').classList.add('hidden');
+            stockActionsDroneId = '';
         }
 
         // opts: true/false = "add" mode (from the Log Flight list or the New
@@ -3724,7 +3776,12 @@
         }
 
         function setupStockPicker() {
-            document.getElementById('btnUnlinkStock')?.addEventListener('click', unlinkDroneStock);
+            document.getElementById('btnUnlinkStock')?.addEventListener('click', () => unlinkDroneStock(document.getElementById('droneEditId').value));
+            document.getElementById('closeStockActions')?.addEventListener('click', closeStockActions);
+            document.getElementById('btnCancelStockActions')?.addEventListener('click', closeStockActions);
+            document.getElementById('stockActionsOpen')?.addEventListener('click', closeStockActions);
+            document.getElementById('stockActionsRemove')?.addEventListener('click', closeStockActions);
+            document.getElementById('stockActionsUnlink')?.addEventListener('click', () => unlinkDroneStock(stockActionsDroneId, closeStockActions));
             document.getElementById('btnDroneFromStock')?.addEventListener('click', () => {
                 closeDroneModal();
                 openStockPicker(false);

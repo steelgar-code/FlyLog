@@ -9,6 +9,8 @@ const item = (id, description, extra = {}) => ({ id, type: 'Quad', description, 
 const inv = (items) => ({ types: ['Quad'], items });
 const raw = (page) => page.evaluate((k) => localStorage.getItem(k), KEY);
 const badge = (page, name) => fleetCard(page, name).locator('[data-stock-badge]');
+const actions = (page) => page.locator('#modalStockActions');
+const openActions = async (page, name) => { await badge(page, name).click(); await expect(actions(page)).toBeVisible(); };
 
 // Alpha Quad linked to s-a (name == stockName); Bravo Hex linked to s-b (pilot-renamed airframe).
 function linkedFixture() {
@@ -181,12 +183,8 @@ const openEditDialog = async (page, name) => {
 };
 
 test.describe('deep links into FlyStock', () => {
-  test('active item: card link and both dialog links have exact hrefs', async ({ page }) => {
+  test('active item: both edit-dialog links have exact hrefs', async ({ page }) => {
     await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
-    const b = badge(page, 'Alpha Quad');
-    await expect(b).toHaveAttribute('href', `${BASE}#edit=s-a`);
-    await expect(b).toHaveAttribute('target', '_blank');
-    expect(await b.getAttribute('rel')).toContain('noopener');
     await openEditDialog(page, 'Alpha Quad');
     const open = page.locator('#stockOpenItem');
     const rem = page.locator('#stockRemoveItem');
@@ -204,7 +202,6 @@ test.describe('deep links into FlyStock', () => {
   test('removed item: edit link only', async ({ page }) => {
     const stock = inv([item('s-a', 'Alpha Quad', { status: 'removed' }), item('s-b', 'Bravo Stock')]);
     await openFleet(page, { fixture: linkedFixture(), stock });
-    await expect(badge(page, 'Alpha Quad')).toHaveAttribute('href', `${BASE}#edit=s-a`);
     await openEditDialog(page, 'Alpha Quad');
     await expect(page.locator('#stockOpenItem')).toBeVisible();
     await expect(page.locator('#stockRemoveItem')).toBeHidden();
@@ -215,10 +212,10 @@ test.describe('deep links into FlyStock', () => {
     ['key absent', undefined],
     ['unreadable key', '{nope'],
   ]) {
-    test(`${name}: no links, badge is not an anchor`, async ({ page }) => {
+    test(`${name}: no links, badge is a button`, async ({ page }) => {
       await openFleet(page, { fixture: linkedFixture(), stock });
       await expect(badge(page, 'Alpha Quad')).toHaveText('Not found in FlyStock');
-      expect(await badge(page, 'Alpha Quad').evaluate((e) => e.tagName)).toBe('SPAN');
+      expect(await badge(page, 'Alpha Quad').evaluate((e) => e.tagName)).toBe('BUTTON');
       await openEditDialog(page, 'Alpha Quad');
       await expect(page.locator('#droneStockLinkText')).toBeVisible();
       await expect(page.locator('#stockOpenItem')).toBeHidden();
@@ -244,16 +241,18 @@ test.describe('deep links into FlyStock', () => {
     await expect(badge(page, 'Alpha Quad')).toHaveCount(0);
   });
 
-  test('clicking the card link does not toggle the card', async ({ page }) => {
+  test('clicking the card badge does not toggle the card', async ({ page }) => {
     await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
-    await page.evaluate(() => document.addEventListener('click', (e) => { if (e.target.closest('a[data-stock-badge]')) e.preventDefault(); }));
     const c = fleetCard(page, 'Alpha Quad');
     const header = c.locator('[role="button"][aria-expanded]').first();
     const before = await header.getAttribute('aria-expanded');
     await badge(page, 'Alpha Quad').click();
+    await expect(actions(page)).toBeVisible();
     expect(await header.getAttribute('aria-expanded')).toBe(before);
+    await page.keyboard.press('Escape');
     await badge(page, 'Alpha Quad').focus();
     await page.keyboard.press('Enter');
+    await expect(actions(page)).toBeVisible();
     expect(await header.getAttribute('aria-expanded')).toBe(before);
   });
 
@@ -263,9 +262,15 @@ test.describe('deep links into FlyStock', () => {
     await openFleet(page, { fixture: fx, stock: ACTIVE() });
     const b = badge(page, 'Alpha Quad');
     await expect(b).toBeVisible();
-    expect(await b.evaluate((e) => e.tagName)).toBe('SPAN');
-    expect(await page.locator('#fleetGrid [onmouseover]').count()).toBe(0);
-    expect(await page.locator('#fleetGrid a[href*="FlyStock"]').count()).toBe(0);
+    expect(await b.evaluate((e) => e.tagName)).toBe('BUTTON');
+    await b.click();
+    await expect(actions(page)).toBeVisible();
+    await expect(page.locator('#stockActionsOpen')).toBeHidden();
+    await expect(page.locator('#stockActionsRemove')).toBeHidden();
+    await expect(page.locator('#stockActionsUnlink')).toBeVisible();
+    await page.keyboard.press('Escape');
+    expect(await page.locator('[onmouseover]').count()).toBe(0);
+    expect(await page.locator('#fleetGrid a[href*="FlyStock"], #modalStockActions a:visible').count()).toBe(0);
     await openEditDialog(page, 'Alpha Quad');
     await expect(page.locator('#stockOpenItem')).toBeHidden();
     await expect(page.locator('#stockRemoveItem')).toBeHidden();
@@ -277,6 +282,173 @@ test.describe('deep links into FlyStock', () => {
     await expect(page.locator('#stockOpenItem')).toHaveText('Відкрити у FlyStock');
     await expect(page.locator('#stockRemoveItem')).toHaveText('Видалити у FlyStock');
     expect(await page.locator('#stockOpenItem').getAttribute('title')).toContain('FlyStock');
+  });
+});
+
+test.describe('FlyStock actions popup on the card badge', () => {
+  const OPEN = '#stockActionsOpen', REM = '#stockActionsRemove', UNL = '#stockActionsUnlink';
+
+  test('badge is a button; click opens the popup without toggling the card', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    const b = badge(page, 'Alpha Quad');
+    expect(await b.evaluate((e) => e.tagName)).toBe('BUTTON');
+    expect(await b.getAttribute('aria-label')).toContain('FlyStock actions');
+    await expect(actions(page)).toBeHidden();
+    const header = fleetCard(page, 'Alpha Quad').locator('[role="button"][aria-expanded]').first();
+    const before = await header.getAttribute('aria-expanded');
+    await b.click();
+    await expect(actions(page)).toBeVisible();
+    await expect(page.locator('#modalStockActionsTitle')).toHaveText('Alpha Quad');
+    expect(await header.getAttribute('aria-expanded')).toBe(before);
+  });
+
+  test('active item: Open, Remove and Unlink with exact hrefs', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openActions(page, 'Alpha Quad');
+    await expect(page.locator(OPEN)).toHaveAttribute('href', `${BASE}#edit=s-a`);
+    await expect(page.locator(REM)).toHaveAttribute('href', `${BASE}#remove=s-a`);
+    for (const sel of [OPEN, REM]) {
+      await expect(page.locator(sel)).toBeVisible();
+      await expect(page.locator(sel)).toHaveAttribute('target', '_blank');
+      expect(await page.locator(sel).getAttribute('rel')).toContain('noopener');
+    }
+    await expect(page.locator(UNL)).toBeVisible();
+  });
+
+  test('removed item: Open and Unlink only', async ({ page }) => {
+    const stock = inv([item('s-a', 'Alpha Quad', { status: 'removed' }), item('s-b', 'Bravo Stock')]);
+    await openFleet(page, { fixture: linkedFixture(), stock });
+    await openActions(page, 'Alpha Quad');
+    await expect(page.locator(OPEN)).toHaveAttribute('href', `${BASE}#edit=s-a`);
+    await expect(page.locator(REM)).toBeHidden();
+    await expect(page.locator(UNL)).toBeVisible();
+    await expect(page.locator('#stockActionsText')).toHaveText('Removed in FlyStock');
+  });
+
+  for (const [name, stock] of [
+    ['item missing', inv([item('other', 'Other')])],
+    ['key absent', undefined],
+    ['unreadable key', '{nope'],
+  ]) {
+    test(`${name}: Unlink only`, async ({ page }) => {
+      await openFleet(page, { fixture: linkedFixture(), stock });
+      await openActions(page, 'Alpha Quad');
+      await expect(page.locator('#stockActionsText')).toHaveText('Not found in FlyStock');
+      await expect(page.locator(OPEN)).toBeHidden();
+      await expect(page.locator(REM)).toBeHidden();
+      await expect(page.locator(UNL)).toBeVisible();
+    });
+  }
+
+  test('unsafe stored stockId: Unlink only, nothing injected', async ({ page }) => {
+    const fx = makeFixture();
+    Object.assign(fx.drones[0], { stockId: 'x"onmouseover=alert(1)', stockName: 'Evil' });
+    await openFleet(page, { fixture: fx, stock: ACTIVE() });
+    await openActions(page, 'Alpha Quad');
+    await expect(page.locator(OPEN)).toBeHidden();
+    await expect(page.locator(REM)).toBeHidden();
+    await expect(page.locator(UNL)).toBeVisible();
+    expect(await page.locator('[onmouseover]').count()).toBe(0);
+  });
+
+  test('clicking Open closes the popup', async ({ page, context }) => {
+    await context.route(`${BASE}**`, (r) => r.abort());
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openActions(page, 'Alpha Quad');
+    const popup = context.waitForEvent('page').catch(() => null);
+    await page.locator(OPEN).click();
+    await expect(actions(page)).toBeHidden();
+    const p = await popup;
+    if (p) await p.close();
+  });
+
+  test('clicking Remove closes the popup', async ({ page, context }) => {
+    await context.route(`${BASE}**`, (r) => r.abort());
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openActions(page, 'Alpha Quad');
+    const popup = context.waitForEvent('page').catch(() => null);
+    await page.locator(REM).click();
+    await expect(actions(page)).toBeHidden();
+    const p = await popup;
+    if (p) await p.close();
+  });
+
+  test('Unlink: confirm label, cancel keeps the link, OK unlinks and closes', async ({ page }) => {
+    const stock = ACTIVE();
+    const before = JSON.stringify(stock);
+    await openFleet(page, { fixture: linkedFixture(), stock });
+    await openActions(page, 'Alpha Quad');
+    await page.locator(UNL).click();
+    await expect(page.locator('#btnConfirmOk')).toHaveText('Unlink');
+    await confirmDialog(page, false);
+    expect((await store(page, 'drones'))[0].stockId).toBe('s-a');
+    await expect(actions(page)).toBeVisible();
+
+    await page.locator(UNL).click();
+    await confirmDialog(page, true);
+    await expect(actions(page)).toBeHidden();
+    const d = (await store(page, 'drones'))[0];
+    expect(d).not.toHaveProperty('stockId');
+    expect(d).not.toHaveProperty('stockName');
+    await expect(badge(page, 'Alpha Quad')).toHaveCount(0);
+    await expect(page.locator('#toastContainer, #toast').first()).toContainText('unlinked');
+    await page.locator('#btnAddDroneModal').click();
+    await page.locator('#btnDroneFromStock').click();
+    await expect(page.locator('#stockPickerList label')).toHaveText([/Alpha Quad/]);
+    expect(await raw(page)).toBe(before);
+  });
+
+  test('Escape closes only the popup; Cancel and backdrop close it', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await openActions(page, 'Alpha Quad');
+    await page.keyboard.press('Escape');
+    await expect(actions(page)).toBeHidden();
+    await expect(page.locator('#viewFleet')).toBeVisible();
+    await openActions(page, 'Alpha Quad');
+    await page.locator('#btnCancelStockActions').click();
+    await expect(actions(page)).toBeHidden();
+    await openActions(page, 'Alpha Quad');
+    await actions(page).click({ position: { x: 3, y: 3 } });
+    await expect(actions(page)).toBeHidden();
+  });
+
+  test('unlinked airframes have no badge', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE() });
+    await expect(badge(page, 'Charlie Mini')).toHaveCount(0);
+  });
+
+  test('crafted stockName shows as text in the popup', async ({ page }) => {
+    const evil = '<img src=x onerror=window.__xss=1>';
+    await openFleet(page, { fixture: linkedFixture(), stock: inv([item('s-a', evil), item('s-b', 'Bravo Stock')]) });
+    await openActions(page, evil);
+    await expect(page.locator('#modalStockActionsTitle')).toHaveText(evil);
+    await expect(page.locator('#stockActionsText')).toContainText(evil);
+    expect(await actions(page).locator('img').count()).toBe(0);
+    expect(await page.evaluate(() => window.__xss)).toBeUndefined();
+  });
+
+  test('uk labels', async ({ page }) => {
+    await openFleet(page, { fixture: linkedFixture(), stock: ACTIVE(), lang: 'uk' });
+    expect(await badge(page, 'Alpha Quad').getAttribute('aria-label')).toContain('Дії FlyStock');
+    await openActions(page, 'Alpha Quad');
+    await expect(page.locator(OPEN)).toHaveText('Відкрити у FlyStock');
+    await expect(page.locator(REM)).toHaveText('Видалити у FlyStock');
+    await expect(page.locator(UNL)).toHaveText('Від’єднати');
+  });
+
+  test('no horizontal overflow on a phone; stock key untouched', async ({ page }) => {
+    const stock = inv([item('s-a', 'Alpha Quad With A Very Long Description That Keeps Going And Going'), item('s-b', 'Bravo Stock')]);
+    const before = JSON.stringify(stock);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await openApp(page, { fixture: linkedFixture(), stock });
+    await page.locator('#mobileMenuBtn').click();
+    await page.locator('#sidebar [data-nav="fleet"]').click();
+    await expect(page.locator('#viewFleet')).toBeVisible();
+    await openActions(page, 'Bravo Hex');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth &&
+      [...document.querySelectorAll('#modalStockActions > div')].every((d) => d.scrollWidth <= d.clientWidth))).toBe(true);
+    await page.keyboard.press('Escape');
+    expect(await raw(page)).toBe(before);
   });
 });
 
