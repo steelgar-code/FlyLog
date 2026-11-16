@@ -152,8 +152,9 @@ without asking.
   unlinked.
 - **Unlink** in the airframe edit dialog. The item is then offered by the picker again.
 - **Deep links** `flyStockItemUrl(action, stockId)`: "Open in FlyStock" and "Remove in FlyStock"
-  in the edit dialog, and the FlyStock badge on the fleet card is the open link. Active item:
-  both; removed item: open only; not found: none.
+  in the edit dialog. The FlyStock badge on the fleet card is a button that opens a popup
+  (`openStockActions`) with Open, Remove and Unlink. Active item: all; removed item: Open and
+  Unlink; not found: Unlink only.
 - **Backup:** `stockId` and `stockName` go through export, Replace and Merge. An invalid
   `stockId` is dropped; within one file the first airframe keeps a duplicated `stockId`. Merge
   matches by `stockId` first, then by name; an existing link wins; no two airframes ever share a
